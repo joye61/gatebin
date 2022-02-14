@@ -1,0 +1,27 @@
+{
+  "name": "bin-gateway",
+  "version": "0.0.1",
+  "description": "车轮前端二进制网关",
+  "main": "./dist/index.js",
+  "scripts": {
+    "start": "npm run clear && tsc && concurrently --timings npm:watch:ts npm:watch:test",
+    "clear": "rm -rfv ./dist",
+    "watch:ts": "tsc --pretty -w",
+    "watch:test": "cd ./test && npm start",
+    "build": "npm run clear && tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@git.chelun.com:zhoujing2/bin-gateway.git"
+  },
+  "keywords": [
+    "bin",
+    "gateway"
+  ],
+  "author": "joye",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^7.0.0",
+    "typescript": "^4.5.5"
+  }
+}

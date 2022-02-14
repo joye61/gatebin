@@ -1,0 +1,7 @@
+/deps/
+/test/
+/gateway/
+/.gitignore
+/.npmignore
+/package-lock.json
+/tsconfig.json
