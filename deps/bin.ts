@@ -32,6 +32,16 @@ export interface ResponseBinData {
 }
 
 /**
+ * 字符串转ArrayBuffer
+ * @param str
+ * @returns
+ */
+export async function str2buf(str: string): Promise<ArrayBuffer> {
+  const blob = new Blob([str], { type: "text/plain" });
+  return blob.arrayBuffer();
+}
+
+/**
  * 请不求数据编码为二进制
  * @param data
  * @returns
