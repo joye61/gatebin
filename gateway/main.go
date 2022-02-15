@@ -9,8 +9,9 @@ import (
 func main() {
 	e := echo.New()
 	e.HideBanner = true
-	e.GET("/", func(c echo.Context) error {
+	e.POST("/do", func(c echo.Context) error {
+		DecodeBody(c.Request().Body)
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(":5000"))
 }
