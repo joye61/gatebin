@@ -12,17 +12,23 @@ import { config } from "./config";
 export function post(input, init) {
     return __awaiter(this, void 0, void 0, function* () {
         const data = yield encode({
-            url: "https://www.chelun.com",
-            method: "GET",
             data: {
-                a: 1, b: 2
-            }
+                url: "https://www.chelun.com",
+                method: "GET",
+                params: {
+                    a: 1,
+                    b: 2,
+                },
+            },
         });
+<<<<<<< HEAD
         const b = new Blob([data]);
         console.log(b, 'b');
+=======
+>>>>>>> 626327a0ffb2b534cc4991ae3146f848c4b97e9f
         const resp = yield fetch(config.gatewayUrl, {
             method: "POST",
-            body: new Blob([data]),
+            body: data.buffer,
         });
         const res = yield resp.arrayBuffer();
         console.log(res, 'res');
