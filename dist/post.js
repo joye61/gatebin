@@ -19,13 +19,13 @@ export function post(input, init) {
             }
         });
         const b = new Blob([data]);
+        console.log(b, 'b');
         const resp = yield fetch(config.gatewayUrl, {
             method: "POST",
             body: new Blob([data]),
         });
         const res = yield resp.arrayBuffer();
-        console.log(res);
+        console.log(res, 'res');
         return {};
     });
 }
-console.log(post(config.gatewayUrl), 'pp');

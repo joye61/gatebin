@@ -19,16 +19,16 @@ export async function post<I, O extends object>(
       a:1,b:2
     }
   });
-
+  
   const b = new Blob([data]);
-
+console.log(b,'b')
   // 发送请求
   const resp = await fetch(config.gatewayUrl, {
     method: "POST",
     body: new Blob([data]),
   });
   const res = await resp.arrayBuffer();
-  console.log(res);
+  console.log(res,'res');
 
   // TODO
   return {} as O;
