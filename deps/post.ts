@@ -11,12 +11,25 @@ export async function post<I, O extends object>(
   input: RequestInfo,
   init?: RequestInit
 ): Promise<O> {
-  const gatewayUrl = config.gatewayUrl;
+  // 测试数据
+  const data = await encode({
+    url: "https://www.chelun.com",
+    method: "GET",
+    data: {
+      a:1,b:2
+    }
+  });
 
-  // data = ...
-  // fetch(gatewayUrl, "POST", encode(data))
+  const b = new Blob([data]);
+
+  // 发送请求
+  const resp = await fetch(config.gatewayUrl, {
+    method: "POST",
+    body: new Blob([data]),
+  });
+  const res = await resp.arrayBuffer();
+  console.log(res);
 
   // TODO
-  console.log("here we go");
   return {} as O;
 }

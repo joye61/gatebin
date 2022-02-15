@@ -1,0 +1,48 @@
+{
+  // See https://go.microsoft.com/fwlink/?LinkId=733558
+  // for the documentation about the tasks.json format
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "windows",
+      "type": "shell",
+      "command": "go",
+      "args": ["build", "-o", "../bin/gateway-windows.exe"],
+      "options": {
+        "env": {
+          "GOOS": "windows"
+        },
+        "cwd": "${workspaceFolder}/gateway"
+      }
+    },
+    {
+      "label": "darwin",
+      "type": "shell",
+      "command": "go",
+      "args": ["build", "-o", "../bin/gateway-darwin"],
+      "options": {
+        "env": {
+          "GOOS": "darwin"
+        },
+        "cwd": "${workspaceFolder}/gateway"
+      }
+    },
+    {
+      "label": "linux",
+      "type": "shell",
+      "command": "go",
+      "args": ["build", "-o", "../bin/gateway-linux"],
+      "options": {
+        "env": {
+          "GOOS": "linux"
+        },
+        "cwd": "${workspaceFolder}/gateway"
+      }
+    },
+    {
+      "label": "Gateway",
+      "dependsOrder": "parallel",
+      "dependsOn": ["windows", "darwin", "linux"]
+    }
+  ]
+}

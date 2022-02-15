@@ -7,11 +7,24 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+import { encode } from "./bin";
 import { config } from "./config";
 export function post(input, init) {
     return __awaiter(this, void 0, void 0, function* () {
-        const gatewayUrl = config.gatewayUrl;
-        console.log("here we go");
+        const data = yield encode({
+            url: "https://www.chelun.com",
+            method: "GET",
+            data: {
+                a: 1, b: 2
+            }
+        });
+        const b = new Blob([data]);
+        const resp = yield fetch(config.gatewayUrl, {
+            method: "POST",
+            body: new Blob([data]),
+        });
+        const res = yield resp.arrayBuffer();
+        console.log(res);
         return {};
     });
 }
