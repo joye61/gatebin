@@ -12,7 +12,7 @@ export async function post<I, O extends object>(
   init?: RequestInit
 ): Promise<O> {
   const gatewayUrl = config.gatewayUrl;
-  
+
   // data = ...
   // fetch(gatewayUrl, "POST", encode(data))
 

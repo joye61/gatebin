@@ -15,3 +15,4 @@ export function post(input, init) {
         return {};
     });
 }
+console.log(post(config.gatewayUrl), 'pp');
