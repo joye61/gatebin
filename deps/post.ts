@@ -13,19 +13,23 @@ export async function post<I, O extends object>(
 ): Promise<O> {
   // 测试数据
   const data = await encode({
-    url: "https://www.chelun.com",
-    method: "GET",
     data: {
-      a:1,b:2
-    }
+      url: "https://www.chelun.com",
+      method: "GET",
+      params: {
+        a: 1,
+        b: 2,
+      },
+    },
   });
 
-  const b = new Blob([data]);
+  // const form = new FormData();
+  // form.set("data", new Blob([data], { type: "application/octet-stream" }));
 
   // 发送请求
   const resp = await fetch(config.gatewayUrl, {
     method: "POST",
-    body: new Blob([data]),
+    body: data.buffer,
   });
   const res = await resp.arrayBuffer();
   console.log(res);

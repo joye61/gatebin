@@ -5,13 +5,8 @@ import "io"
 type Any = interface{}
 
 type RequestBody struct {
-	/// 头部放置各个数据段的长度
-	UrlLen      uint16 /// 最大64K 2
-	MethodLen   byte   /// 1
-	HeadersLen  uint16 /// 最大64K 2
-	DataLen     uint16 /// 2
-	CookiesLen  uint16 /// 2
-	FilesMapLen uint16 /// 2
+	/// 数据域的长度
+	DataLen uint16 /// 2个字节 最大表示64K
 
 	/// 主体部分按照头部顺序读取
 	Url    string
