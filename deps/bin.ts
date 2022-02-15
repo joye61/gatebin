@@ -27,6 +27,12 @@ export async function str2buf(str: string): Promise<ArrayBuffer> {
   return blob.arrayBuffer();
 }
 
+
+export async function buf2str(buffer:ArrayBuffer) {
+  // return String.fromCharCode.apply(null, new Uint8Array(buffer))
+ return  Array.from(new Uint8Array(buffer), (e) => String.fromCharCode(e)).join('')
+}
+
 /**
  * 请求数据编码
  * @param data 
@@ -52,7 +58,7 @@ export async function encode(data: RequestData): Promise<Uint8Array> {
   if (filesMap.length) {
     data.data.filesMap = filesMap;
   }
-
+ 
   // 数据缓存
   const dataBuf = await str2buf(JSON.stringify(data.data));
 
@@ -75,7 +81,6 @@ export async function encode(data: RequestData): Promise<Uint8Array> {
     bin.set(new Uint8Array(fileBuf), offset);
     offset += fileBuf.byteLength;
   }
-
   return bin;
 }
 
@@ -85,6 +90,11 @@ export async function encode(data: RequestData): Promise<Uint8Array> {
  * @returns
  */
 export function decode(data: ArrayBuffer) {
+
   // TODO
+  console.log(data,'data')
+  const bin = new Uint8Array(data);
+  // buf2str()
+
   return {};
 }

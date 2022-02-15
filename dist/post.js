@@ -7,8 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { encode } from "./bin";
-import { config } from "./config";
+import { encode, decode } from "./bin";
 export function post(input, init) {
     return __awaiter(this, void 0, void 0, function* () {
         const data = yield encode({
@@ -21,17 +20,7 @@ export function post(input, init) {
                 },
             },
         });
-<<<<<<< HEAD
-        const b = new Blob([data]);
-        console.log(b, 'b');
-=======
->>>>>>> 626327a0ffb2b534cc4991ae3146f848c4b97e9f
-        const resp = yield fetch(config.gatewayUrl, {
-            method: "POST",
-            body: data.buffer,
-        });
-        const res = yield resp.arrayBuffer();
-        console.log(res, 'res');
+        const data1 = yield decode(data.buffer);
         return {};
     });
 }

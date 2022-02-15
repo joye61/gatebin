@@ -1,4 +1,4 @@
-import { encode } from "./bin";
+import { encode,decode } from "./bin";
 import { config } from "./config";
 
 /**
@@ -27,12 +27,20 @@ export async function post<I, O extends object>(
   // form.set("data", new Blob([data], { type: "application/octet-stream" }));
 
   // 发送请求
-  const resp = await fetch(config.gatewayUrl, {
-    method: "POST",
-    body: data.buffer,
-  });
-  const res = await resp.arrayBuffer();
-  console.log(res,'res');
+  // const resp = await fetch(config.gatewayUrl, {
+  //   method: "POST",
+  //   body: data.buffer,
+  // });
+
+  
+
+
+  // const res = await resp.arrayBuffer();
+  // console.log(res,'res');
+
+  // 解码
+  const data1 = await decode(data.buffer);
+
 
   // TODO
   return {} as O;

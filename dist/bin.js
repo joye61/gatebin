@@ -13,6 +13,11 @@ export function str2buf(str) {
         return blob.arrayBuffer();
     });
 }
+export function buf2str(buffer) {
+    return __awaiter(this, void 0, void 0, function* () {
+        return Array.from(new Uint8Array(buffer), (e) => String.fromCharCode(e)).join('');
+    });
+}
 export function encode(data) {
     return __awaiter(this, void 0, void 0, function* () {
         let filesMapBuf = new ArrayBuffer(0);
@@ -50,5 +55,7 @@ export function encode(data) {
     });
 }
 export function decode(data) {
+    console.log(data, 'data');
+    const bin = new Uint8Array(data);
     return {};
 }
