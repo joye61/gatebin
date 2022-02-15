@@ -1,6 +1,11 @@
 package main
 
-import "io"
+import (
+	"bytes"
+	"encoding/binary"
+	"fmt"
+	"io"
+)
 
 type Any = interface{}
 
@@ -24,7 +29,22 @@ type RequestBody struct {
 }
 
 /// 解码请求的body数据
-func DecodeBody(body io.ReadCloser) *RequestBody {
+func DecodeBody(body io.ReadCloser) (*RequestBody, error) {
+	// 首先读取两个字节，获取数据域的长度
+	p := make([]byte, 2)
+	_, err := body.Read(p)
+	if err != nil {
+		return nil, err
+	}
+	dataLenReader := bytes.NewReader(p)
+	var dataLen uint16
+	binary.Read(dataLenReader, binary.LittleEndian, &dataLen)
+
+	t, _ := binary.Uvarint(p)
+	fmt.Printf("NoOrder数据域长度：%#d", t)
+
+	fmt.Printf("数据域长度：%#d", dataLen)
+
 	result := &RequestBody{}
-	return result
+	return result, nil
 }

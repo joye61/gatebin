@@ -59,11 +59,13 @@ export async function encode(data: RequestData): Promise<Uint8Array> {
   // 创建缓冲区
   const buf = new ArrayBuffer(2 + dataBuf.byteLength + filesTotalSize);
   const bin = new Uint8Array(buf);
-  
+
   // 写入数据的长度
   let offset = 0;
   bin.set(Uint16Array.of(dataBuf.byteLength), offset);
   offset += 2;
+
+  console.log("数据域长度：", dataBuf.byteLength);
 
   // 写入数据
   bin.set(new Uint8Array(dataBuf), offset);
