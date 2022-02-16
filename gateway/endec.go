@@ -1,50 +1,71 @@
 package main
 
 import (
-	"bytes"
 	"encoding/binary"
-	"fmt"
+	"encoding/json"
+	"errors"
 	"io"
 )
 
 type Any = interface{}
 
-type RequestBody struct {
-	/// 数据域的长度
-	DataLen uint16 /// 2个字节 最大表示64K
+type FileItem struct {
+	Name string
+	Size int32
+}
 
-	/// 主体部分按照头部顺序读取
-	Url    string
-	Method string
-	/// 自定义的头部
-	Headers map[string]string
-	/// 将数据和文件分开，便于JSON解析
-	Data    map[string]string
-	Cookies map[string]string
-	/// 这是个切片类型，因为要标识后续文件的顺序
-	/// 键为文件对应的名字，值为文件长度
-	FilesMap []map[string]uint32
-	/// 单文件最大4G
-	Files map[string][]byte
+type DataType struct {
+	Url      string
+	Method   string
+	Headers  map[string]string
+	Params   map[string]Any
+	FilesMap []FileItem
+}
+
+type IncomingPackage struct {
+	DataLen uint16
+	Data    *DataType
+	Files   [][]byte
 }
 
 /// 解码请求的body数据
-func DecodeBody(body io.ReadCloser) (*RequestBody, error) {
+func DecodeBody(body io.ReadCloser) (*IncomingPackage, error) {
+	pack := &IncomingPackage{}
 	// 首先读取两个字节，获取数据域的长度
-	p := make([]byte, 2)
-	_, err := body.Read(p)
-	if err != nil {
-		return nil, err
+	dataLenBuf := make([]byte, 2)
+	dataLenN, _ := body.Read(dataLenBuf)
+	if dataLenN != 2 {
+		return nil, errors.New("error in decoding data length")
 	}
-	dataLenReader := bytes.NewReader(p)
-	var dataLen uint16
-	binary.Read(dataLenReader, binary.LittleEndian, &dataLen)
+	dataLen, _ := binary.Uvarint(dataLenBuf)
+	pack.DataLen = uint16(dataLen)
 
-	t, _ := binary.Uvarint(p)
-	fmt.Printf("NoOrder数据域长度：%#d", t)
+	// 读取数据信息
+	dataBuf := make([]byte, dataLen)
+	dataN, _ := body.Read(dataBuf)
+	if uint64(dataN) != dataLen {
+		return nil, errors.New("error in decoding data")
+	}
+	// 将数据转换为json对象
+	var data DataType
+	jsonerr := json.Unmarshal(dataBuf, &data)
+	if jsonerr != nil {
+		return nil, jsonerr
+	}
+	pack.Data = &data
 
-	fmt.Printf("数据域长度：%#d", dataLen)
+	// 读取文件信息
+	if data.FilesMap != nil {
+		pack.Files = [][]byte{}
+		for _, file := range data.FilesMap {
+			fileBuf := make([]byte, file.Size)
+			fileN, _ := body.Read(fileBuf)
+			if fileN != int(file.Size) {
+				return nil, errors.New("error decoding file")
+			}
+			pack.Files = append(pack.Files, fileBuf)
+		}
+	}
 
-	result := &RequestBody{}
-	return result, nil
+	return pack, nil
 }
