@@ -56,7 +56,5 @@ export function encode(data) {
     });
 }
 export function decode(data) {
-    console.log(data, 'data');
-    const bin = new Uint8Array(data);
     return {};
 }

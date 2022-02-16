@@ -27,9 +27,12 @@ export async function str2buf(str: string): Promise<ArrayBuffer> {
   return blob.arrayBuffer();
 }
 
-
+/**
+ * ArrayBuffer转字符串
+ * @param buffer
+ * @returns
+ */
 export async function buf2str(buffer:ArrayBuffer) {
-  // return String.fromCharCode.apply(null, new Uint8Array(buffer))
  return  Array.from(new Uint8Array(buffer), (e) => String.fromCharCode(e)).join('')
 }
 
@@ -92,11 +95,7 @@ export async function encode(data: RequestData): Promise<Uint8Array> {
  * @returns
  */
 export function decode(data: ArrayBuffer) {
-
+ 
   // TODO
-  console.log(data,'data')
-  const bin = new Uint8Array(data);
-  // buf2str()
-
   return {};
 }

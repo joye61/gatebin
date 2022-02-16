@@ -7,20 +7,32 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { encode, decode } from "./bin";
+import { encode } from "./bin";
+import { config } from "./config";
 export function post(input, init) {
     return __awaiter(this, void 0, void 0, function* () {
+        let url = 'https://www.chelun.com';
+        let path;
+        if (typeof input == 'string') {
+            path = url + "/" + input.replace(/^\/*|\/*$/g, "");
+        }
+        console.log(input, init === null || init === void 0 ? void 0 : init.body, 'par');
         const data = yield encode({
             data: {
-                url: "https://www.chelun.com",
-                method: "GET",
-                params: {
-                    a: 1,
-                    b: 2,
-                },
+                url: typeof input == 'string' ? url + "/" + input.replace(/^\/*|\/*$/g, "") : input.url,
+                method: init === null || init === void 0 ? void 0 : init.method,
+                params: typeof (init === null || init === void 0 ? void 0 : init.body) == 'string' ? JSON.parse(init === null || init === void 0 ? void 0 : init.body) : init === null || init === void 0 ? void 0 : init.body,
             },
         });
-        const data1 = yield decode(data.buffer);
+        const form = new FormData();
+        form.set("data", new Blob([data], { type: "application/octet-stream" }));
+        const resp = yield fetch(config.gatewayUrl, {
+            method: "POST",
+            body: data.buffer,
+        });
+        const res = yield resp.arrayBuffer();
+        console.log(res, 'res');
         return {};
     });
 }
+post('/to', { method: "GET", body: JSON.stringify({ a: 1, b: 2, }) });
