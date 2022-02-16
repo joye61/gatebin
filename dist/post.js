@@ -14,7 +14,8 @@ export function post(input, init) {
         const data = yield encode({
             data: {
                 url: "https://www.chelun.com",
-                method: "GET",
+                method: (init === null || init === void 0 ? void 0 : init.method) || "GET",
+                headers: {},
                 params: {
                     a: 1,
                     b: 2,

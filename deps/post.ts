@@ -15,7 +15,10 @@ export async function post<I, O extends object>(
   const data = await encode({
     data: {
       url: "https://www.chelun.com",
-      method: "GET",
+      method: init?.method || "GET",
+      headers: {
+        
+      },
       params: {
         a: 1,
         b: 2,

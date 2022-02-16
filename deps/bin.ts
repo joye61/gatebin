@@ -4,9 +4,9 @@ export type FileItem = {
   file: Blob;
 };
 
-export interface DataType {
+interface DataType {
   url: string;
-  method?: string;
+  method: string;
   headers?: HeadersInit;
   params?: Record<string, number | string | boolean | null>;
   filesMap?: Array<Omit<FileItem, "file">>;
@@ -64,8 +64,6 @@ export async function encode(data: RequestData): Promise<Uint8Array> {
   let offset = 0;
   bin.set(Uint16Array.of(dataBuf.byteLength), offset);
   offset += 2;
-
-  console.log("数据域长度：", dataBuf.byteLength);
 
   // 写入数据
   bin.set(new Uint8Array(dataBuf), offset);

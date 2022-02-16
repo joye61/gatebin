@@ -39,7 +39,6 @@ export function encode(data) {
         let offset = 0;
         bin.set(Uint16Array.of(dataBuf.byteLength), offset);
         offset += 2;
-        console.log("数据域长度：", dataBuf.byteLength);
         bin.set(new Uint8Array(dataBuf), offset);
         offset += dataBuf.byteLength;
         for (let file of files) {
