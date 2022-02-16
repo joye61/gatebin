@@ -55,8 +55,9 @@ export async function encode(data: WillSendData): Promise<Uint8Array> {
         files.push(item.file);
         filesTotalSize += item.file.size;
         filesMap.push({
-          name: item.name,
+          fileName: item.filedName,
           size: item.file.size,
+          filedName: item.fileName
         });
       }
     });
@@ -90,10 +91,18 @@ export async function encode(data: WillSendData): Promise<Uint8Array> {
   );
   const bin = new Uint8Array(buf);
 
-  // 写入参数的长度
+  // 写入参数的长度，保证大端序
   let offset = 0;
-  bin.set(Uint16Array.of(paramsBuf.byteLength), offset);
+  const paramsLenBuf = new ArrayBuffer(2);
+  const dataView = new DataView(paramsLenBuf);
+  dataView.setUint16(0, paramsBuf.byteLength);
+  bin.set(new Uint8Array(paramsLenBuf), offset);
   offset += 2;
+  // bin.set(new Uint8Array([dataView.getUint8(1)]), offset);
+  // offset += 1;
+  // console.log(dataView.getUint16(0), new Uint16Array(paramsLenBuf)[0]);
+  // bin.set(new Uint8Array(paramsLenBuf), offset);
+  // offset += 2;
 
   // 写入参数
   bin.set(new Uint8Array(paramsBuf), offset);

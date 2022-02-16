@@ -52,9 +52,10 @@ function getWillSendData(url, option) {
         config.body.forEach((value, key) => {
             if (value instanceof File) {
                 files.push({
-                    name: value.name,
+                    filedName: key,
                     size: value.size,
                     file: value,
+                    fileName: value.name,
                 });
             }
             else {
@@ -74,10 +75,14 @@ function getWillSendData(url, option) {
         setAsRaw(config.body);
     }
     else if (isPlainObject(config.body)) {
-        if (headers["content-type"] &&
-            /^application\/json/.test(headers["content-type"])) {
+        const ctype = headers["content-type"];
+        if (ctype === "application/json") {
             headers["content-type"] = "application/json";
             setAsRaw(JSON.stringify(config.body));
+        }
+        else if (ctype === "multipart/form-data") {
+            headers["content-type"] = "multipart/form-data";
+            willSendData.params = config.body;
         }
         else {
             headers["content-type"] = "application/x-www-form-urlencoded";

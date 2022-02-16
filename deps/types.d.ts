@@ -1,10 +1,12 @@
 type FileItem = {
   // 文件名
-  name: string;
+  filedName: string;
   // 文件大小
   size: number;
   // 文件源数据
   file?: File;
+  // 文件名
+  fileName: string;
 };
 
 type TypedArray =

@@ -40,8 +40,9 @@ export function encode(data) {
                     files.push(item.file);
                     filesTotalSize += item.file.size;
                     filesMap.push({
-                        name: item.name,
+                        fileName: item.filedName,
                         size: item.file.size,
+                        filedName: item.fileName
                     });
                 }
             });
@@ -70,7 +71,10 @@ export function encode(data) {
         const buf = new ArrayBuffer(2 + paramsBuf.byteLength + rawBuf.byteLength + filesTotalSize);
         const bin = new Uint8Array(buf);
         let offset = 0;
-        bin.set(Uint16Array.of(paramsBuf.byteLength), offset);
+        const paramsLenBuf = new ArrayBuffer(2);
+        const dataView = new DataView(paramsLenBuf);
+        dataView.setUint16(0, paramsBuf.byteLength);
+        bin.set(new Uint8Array(paramsLenBuf), offset);
         offset += 2;
         bin.set(new Uint8Array(paramsBuf), offset);
         offset += paramsBuf.byteLength;

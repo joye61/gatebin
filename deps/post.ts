@@ -61,9 +61,10 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
     config.body.forEach((value, key) => {
       if (value instanceof File) {
         files.push({
-          name: value.name,
+          filedName: key,
           size: value.size,
           file: value,
+          fileName: value.name,
         });
       } else {
         params[key] = value;
@@ -80,13 +81,14 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
     }
     setAsRaw(config.body);
   } else if (isPlainObject(config.body)) {
-    // JSON对象类型要么以json形式发送，要么以URLSearchParams发送
-    if (
-      headers["content-type"] &&
-      /^application\/json/.test(headers["content-type"])
-    ) {
+    // JSON对象类型
+    const ctype = headers["content-type"];
+    if (ctype === "application/json") {
       headers["content-type"] = "application/json";
       setAsRaw(JSON.stringify(config.body));
+    } else if (ctype === "multipart/form-data") {
+      headers["content-type"] = "multipart/form-data";
+      willSendData.params = config.body as Record<string, string>;
     } else {
       headers["content-type"] = "application/x-www-form-urlencoded";
       willSendData.params = config.body as Record<string, string>;
