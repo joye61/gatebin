@@ -7,27 +7,103 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { encode } from "./bin";
-import { config } from "./config";
-export function post(input, init) {
-    return __awaiter(this, void 0, void 0, function* () {
-        const data = yield encode({
-            data: {
-                url: "https://www.chelun.com",
-                method: (init === null || init === void 0 ? void 0 : init.method) || "GET",
-                headers: {},
-                params: {
-                    a: 1,
-                    b: 2,
-                },
-            },
+import { encode, decode } from "./codec";
+import { config as bgConfig } from "./config";
+import isPlainObject from "lodash/isPlainObject";
+function getWillSendData(url, option) {
+    if (url.startsWith("//")) {
+        url = window.location.protocol + url;
+    }
+    let config = {
+        method: "GET",
+    };
+    if (isPlainObject(option)) {
+        config = Object.assign(Object.assign({}, config), option);
+    }
+    const willSendData = {
+        url,
+        method: config.method.toUpperCase(),
+        raw: {
+            sendAsRaw: false,
+        },
+    };
+    const headers = {};
+    if (config.headers) {
+        for (let key in config.headers) {
+            headers[key.toLowerCase()] = config.headers[key];
+        }
+    }
+    const setAsRaw = (content) => {
+        willSendData.raw.sendAsRaw = true;
+        willSendData.raw.content = content;
+    };
+    if (config.body instanceof URLSearchParams) {
+        headers["content-type"] = "application/x-www-form-urlencoded";
+        const params = {};
+        config.body.forEach((value, key) => {
+            params[key] = value;
         });
-        const resp = yield fetch(config.gatewayUrl, {
+        willSendData.params = params;
+    }
+    else if (config.body instanceof FormData) {
+        headers["content-type"] = "multipart/form-data";
+        const params = {};
+        const files = [];
+        config.body.forEach((value, key) => {
+            if (value instanceof File) {
+                files.push({
+                    name: value.name,
+                    size: value.size,
+                    file: value,
+                });
+            }
+            else {
+                params[key] = value;
+            }
+        });
+        willSendData.params = params;
+        willSendData.files = files;
+    }
+    else if (config.body instanceof Blob) {
+        if (config.body.type) {
+            headers["content-type"] = config.body.type;
+        }
+        else {
+            headers["content-type"] = "application/octet-stream";
+        }
+        setAsRaw(config.body);
+    }
+    else if (isPlainObject(config.body)) {
+        if (headers["content-type"] &&
+            /^application\/json/.test(headers["content-type"])) {
+            headers["content-type"] = "application/json";
+            setAsRaw(JSON.stringify(config.body));
+        }
+        else {
+            headers["content-type"] = "application/x-www-form-urlencoded";
+            willSendData.params = config.body;
+        }
+    }
+    else if (typeof config.body === "string") {
+        headers["content-type"] = "text/plain";
+        setAsRaw(config.body);
+    }
+    else {
+        headers["content-type"] = "application/octet-stream";
+        setAsRaw(config.body);
+    }
+    willSendData.headers = headers;
+    return willSendData;
+}
+export function POST(url, option) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const willSendData = getWillSendData(url, option);
+        const data = yield encode(willSendData);
+        const response = yield fetch(bgConfig.gatewayUrl, {
             method: "POST",
             body: data.buffer,
         });
-        const res = yield resp.arrayBuffer();
-        console.log(res);
-        return {};
+        const result = yield response.arrayBuffer();
+        return decode(result);
     });
 }

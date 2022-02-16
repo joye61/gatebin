@@ -21,7 +21,11 @@
   "author": "joye",
   "license": "MIT",
   "devDependencies": {
+    "@types/lodash": "^4.14.178",
     "concurrently": "^7.0.0",
     "typescript": "^4.5.5"
+  },
+  "dependencies": {
+    "lodash": "^4.17.21"
   }
 }

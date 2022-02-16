@@ -13,6 +13,12 @@ export function str2buf(str) {
         return blob.arrayBuffer();
     });
 }
+export function buf2str(buffer) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const blob = new Blob([buffer], { type: "text/plain" });
+        return blob.text();
+    });
+}
 export function encode(data) {
     return __awaiter(this, void 0, void 0, function* () {
         let filesMapBuf = new ArrayBuffer(0);

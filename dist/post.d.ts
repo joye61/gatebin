@@ -1,1 +1,1 @@
-export declare function post<I, O extends object>(input: RequestInfo, init?: RequestInit): Promise<O>;
+export declare function POST<T>(url: string, option?: PostOption): Promise<T>;
