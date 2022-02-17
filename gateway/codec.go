@@ -103,15 +103,23 @@ type OutCookie struct {
 }
 
 type OutParams struct {
-	Headers http.Header    `json:"headers"`
-	Cookies []*http.Cookie `json:"cookies,omitempty"`
+	Headers       http.Header    `json:"headers"`
+	Cookies       []*http.Cookie `json:"cookies,omitempty"`
+	ContentLength uint64         `json:"contentLength,omitempty"`
 }
 
 /// 编码远端返回的数据到body中返回给请求的客户端
 func EncodeBody(params *OutParams, Raw []byte) ([]byte, error) {
+	// 对参数做json序列化，便于前端解析
 	serial, err := json.Marshal(params)
 	if err != nil {
 		return nil, err
+	}
+
+	// 对参数数据做zlib压缩，隐藏敏感数据
+	serial, err = Compress(serial, "zlib")
+	if err != nil {
+		return nil, errors.New("data compression anomaly")
 	}
 
 	paramsLen := uint16(len(serial))

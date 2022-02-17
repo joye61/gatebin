@@ -48,7 +48,6 @@ interface PostOption {
   method?: string;
 }
 
-
 interface WillSendBinParams {
   url: string;
   method: string;
@@ -61,5 +60,10 @@ interface WillSendBinParams {
 interface WillReceiveBinParams {
   cookies: Array<{}>;
   headers: Record<string, string>;
-  bodyLen: number;
+  contentLength: number;
+}
+
+interface DecodeData {
+  params: WillReceiveBinParams;
+  body: Uint8Array;
 }

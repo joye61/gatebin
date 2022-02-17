@@ -133,7 +133,29 @@ export async function encode(data: WillSendData): Promise<Uint8Array> {
  * @param data
  * @returns
  */
-export async function decode<T>(data: ArrayBuffer): Promise<T> {
-  // TODO
-  return {} as T;
+export async function decode(data: ArrayBuffer): Promise<DecodeData> {
+  const bin = new Uint8Array(data);
+
+  // 1、读取params长度
+  const view = new DataView(bin.subarray(0, 2).buffer);
+  const paramsLen = view.getUint16(0);
+
+  // 2、读取params
+  const zlibBuf = bin.subarray(2, 2 + paramsLen);
+  let paramsBuf = new Uint8Array(0);
+  try {
+    paramsBuf = zlib.inflate(zlibBuf);
+  } catch (error) {}
+  const bufStr = await buf2str(paramsBuf.buffer);
+  const params: WillReceiveBinParams = JSON.parse(bufStr);
+
+  // 3、根据params读取body的数据
+  const body = bin.subarray(2 + paramsLen, params.contentLength);
+  
+  const result: DecodeData = {
+    params,
+    body,
+  };
+
+  return result;
 }

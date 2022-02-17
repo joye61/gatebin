@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"compress/flate"
 	"compress/gzip"
 	"compress/zlib"
@@ -57,5 +58,25 @@ func DeCompress(body io.Reader, method string) ([]byte, error) {
 		// 表示没有压缩
 		return ioutil.ReadAll(body)
 	}
+}
 
+// 压缩数据逻辑
+func Compress(data []byte, method string) ([]byte, error) {
+	switch method {
+	case "zlib":
+		buf := &bytes.Buffer{}
+		w := zlib.NewWriter(buf)
+		defer w.Close()
+		_, err := w.Write(data)
+		if err != nil {
+			return nil, err
+		}
+		err = w.Close()
+		if err != nil {
+			return nil, err
+		}
+		return buf.Bytes(), nil
+	default:
+		return data, nil
+	}
 }

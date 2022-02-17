@@ -99,8 +99,9 @@ func ProxyRequest(c echo.Context) error {
 	resp.Header.Del("Set-Cookie")
 
 	params := &OutParams{
-		Headers: resp.Header,
-		Cookies: cookies,
+		Headers:       resp.Header,
+		Cookies:       cookies,
+		ContentLength: uint64(len(respBody)),
 	}
 	realBody, err := EncodeBody(params, respBody)
 

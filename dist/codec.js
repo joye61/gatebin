@@ -94,6 +94,22 @@ export function encode(data) {
 }
 export function decode(data) {
     return __awaiter(this, void 0, void 0, function* () {
-        return {};
+        const bin = new Uint8Array(data);
+        const view = new DataView(bin.subarray(0, 2).buffer);
+        const paramsLen = view.getUint16(0);
+        const zlibBuf = bin.subarray(2, 2 + paramsLen);
+        let paramsBuf = new Uint8Array(0);
+        try {
+            paramsBuf = zlib.inflate(zlibBuf);
+        }
+        catch (error) { }
+        const bufStr = yield buf2str(paramsBuf.buffer);
+        const params = JSON.parse(bufStr);
+        const body = bin.subarray(2 + paramsLen, params.contentLength);
+        const result = {
+            params,
+            body,
+        };
+        return result;
     });
 }
