@@ -3,6 +3,7 @@ module bin-gateway
 go 1.17
 
 require (
+	github.com/andybalholm/brotli v1.0.4
 	github.com/labstack/echo/v4 v4.6.3 // indirect
 	github.com/labstack/gommon v0.3.1 // indirect
 	github.com/mattn/go-colorable v0.1.11 // indirect

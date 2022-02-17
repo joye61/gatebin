@@ -1,4 +1,5 @@
 import isTypedArray from "lodash/isTypedArray";
+import zlib from "pako";
 
 /**
  * 字符串转ArrayBuffer
@@ -57,12 +58,12 @@ export async function encode(data: WillSendData): Promise<Uint8Array> {
         filesMap.push({
           fileName: item.filedName,
           size: item.file.size,
-          filedName: item.fileName
+          filedName: item.fileName,
         });
       }
     });
   }
-  if(filesMap.length > 0) {
+  if (filesMap.length > 0) {
     params.files = filesMap;
   }
 
@@ -85,7 +86,9 @@ export async function encode(data: WillSendData): Promise<Uint8Array> {
   params.raw.size = rawSize;
 
   // 数据缓冲
-  const paramsBuf = await str2buf(JSON.stringify(params));
+  const paramsStr = JSON.stringify(params);
+  // const paramsBuf = await str2buf(paramsStr);
+  const paramsBuf = zlib.deflate(paramsStr);
 
   // 创建缓冲区
   const buf = new ArrayBuffer(

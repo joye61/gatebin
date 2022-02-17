@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -16,7 +15,14 @@ import (
 )
 
 /// 目前只允许GET和POST类型的代理请求
-func ProxyRequest(c echo.Context, pack *IncomingPackage) (*http.Response, error) {
+func ProxyRequest(c echo.Context) error {
+	// 首先解码输入数据
+	pack, err := DecodeBody(c.Request().Body)
+	if err != nil {
+		return err
+	}
+
+	// 读取接收到的参数
 	data := pack.Params
 	method := strings.ToUpper(data.Method)
 
@@ -36,7 +42,7 @@ func ProxyRequest(c echo.Context, pack *IncomingPackage) (*http.Response, error)
 		ctype := header.Get("Content-Type")
 		mtype, _, err := mime.ParseMediaType(ctype)
 		if err != nil {
-			return nil, err
+			return err
 		}
 		switch mtype {
 		case "application/x-www-form-urlencoded":
@@ -72,19 +78,35 @@ func ProxyRequest(c echo.Context, pack *IncomingPackage) (*http.Response, error)
 	// 创建请求对象
 	req, err := http.NewRequestWithContext(ctx, method, data.Url, body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	// 更新请求头
 	req.Header = header
 	// 发送请求
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	fmt.Printf("222 %#v", resp.Header)
+	// 响应体有可能是gzip压缩之后的数据
+	compress := resp.Header.Get("Content-Encoding")
+	respBody, err := DeCompress(resp.Body, compress)
+	if err != nil {
+		return err
+	}
 
-	return resp, nil
+	cookies := resp.Cookies()
+	resp.Header.Del("Set-Cookie")
+
+	params := &OutParams{
+		Headers: resp.Header,
+		Cookies: cookies,
+	}
+	realBody, err := EncodeBody(params, respBody)
+
+	if err != nil {
+		return err
+	}
+
+	return c.Blob(http.StatusOK, echo.MIMEOctetStream, realBody)
 }
-
-func HandleRemoteResponse(resp *http.Response) {}

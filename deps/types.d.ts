@@ -1,3 +1,5 @@
+declare const process: any;
+
 type FileItem = {
   // 文件名
   filedName: string;

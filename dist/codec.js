@@ -8,6 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import isTypedArray from "lodash/isTypedArray";
+import zlib from "pako";
 export function str2buf(str) {
     return __awaiter(this, void 0, void 0, function* () {
         const blob = new Blob([str], { type: "text/plain" });
@@ -42,7 +43,7 @@ export function encode(data) {
                     filesMap.push({
                         fileName: item.filedName,
                         size: item.file.size,
-                        filedName: item.fileName
+                        filedName: item.fileName,
                     });
                 }
             });
@@ -69,7 +70,8 @@ export function encode(data) {
             rawSize = rawBuf.byteLength;
         }
         params.raw.size = rawSize;
-        const paramsBuf = yield str2buf(JSON.stringify(params));
+        const paramsStr = JSON.stringify(params);
+        const paramsBuf = zlib.deflate(paramsStr);
         const buf = new ArrayBuffer(2 + paramsBuf.byteLength + rawBuf.byteLength + filesTotalSize);
         const bin = new Uint8Array(buf);
         let offset = 0;

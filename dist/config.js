@@ -6,4 +6,6 @@ export const config = {
         }
         return url;
     },
+    encryption: process.env.NODE_ENV === "production",
+    encryptKey: "7-Gd.*u(y@Y&$*&#"
 };

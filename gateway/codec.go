@@ -58,7 +58,15 @@ func DecodeBody(body io.ReadCloser) (*IncomingPackage, error) {
 	if uint16(dataN) != dataLen {
 		return nil, errors.New("error in decoding data")
 	}
-	// 将数据转换为json对象
+
+	// 先解压数据
+	defBuf := bytes.NewBuffer(dataBuf)
+	dataBuf, defErr := DeCompress(defBuf, "zlib")
+	if defErr != nil {
+		return nil, defErr
+	}
+
+	// 将json字符串数据反序列化为json对象
 	var params ParamsType
 	jsonerr := json.Unmarshal(dataBuf, &params)
 	if jsonerr != nil {
@@ -95,15 +103,40 @@ type OutCookie struct {
 }
 
 type OutParams struct {
-	Headers http.Header `json:"headers"`
-	Cookies []OutCookie `json:"cookies,omitempty"`
-}
-
-type OutgoingPackage struct {
-	ParamsLen uint16
-	Params    OutParams
-	Raw       []byte
+	Headers http.Header    `json:"headers"`
+	Cookies []*http.Cookie `json:"cookies,omitempty"`
 }
 
 /// 编码远端返回的数据到body中返回给请求的客户端
-func EncodeBody() {}
+func EncodeBody(params *OutParams, Raw []byte) ([]byte, error) {
+	serial, err := json.Marshal(params)
+	if err != nil {
+		return nil, err
+	}
+
+	paramsLen := uint16(len(serial))
+	lenBuf := &bytes.Buffer{}
+	berr := binary.Write(lenBuf, binary.BigEndian, paramsLen)
+	if berr != nil {
+		return nil, err
+	}
+
+	// 1、写入参数的长度信息
+	output := bytes.Buffer{}
+	ln, _ := output.Write(lenBuf.Bytes())
+	if ln != 2 {
+		return nil, errors.New("error in writing parameter length during encoding")
+	}
+	// 2、写入参数信息
+	sn, _ := output.Write(serial)
+	if sn != int(paramsLen) {
+		return nil, errors.New("error in writing parameter during encoding")
+	}
+	// 3、写入原始Body
+	rn, _ := output.Write(Raw)
+	if rn != len(Raw) {
+		return nil, errors.New("error in writing raw body during encoding")
+	}
+
+	return output.Bytes(), nil
+}
