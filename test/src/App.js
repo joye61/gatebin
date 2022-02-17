@@ -10,11 +10,11 @@ export default function App() {
       // },
       body: {
         a: 1,
-        b: "hello world",
+        b: "hello world 你好世界",
         c: true,
         d: undefined,
         e: null,
-        f: 1.92
+        f: 1.92,
       },
     });
   }, []);

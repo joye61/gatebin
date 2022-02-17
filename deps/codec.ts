@@ -62,7 +62,9 @@ export async function encode(data: WillSendData): Promise<Uint8Array> {
       }
     });
   }
-  params.files = filesMap;
+  if(filesMap.length > 0) {
+    params.files = filesMap;
+  }
 
   // 原始数据缓冲
   let rawSize = 0;
@@ -98,11 +100,6 @@ export async function encode(data: WillSendData): Promise<Uint8Array> {
   dataView.setUint16(0, paramsBuf.byteLength);
   bin.set(new Uint8Array(paramsLenBuf), offset);
   offset += 2;
-  // bin.set(new Uint8Array([dataView.getUint8(1)]), offset);
-  // offset += 1;
-  // console.log(dataView.getUint16(0), new Uint16Array(paramsLenBuf)[0]);
-  // bin.set(new Uint8Array(paramsLenBuf), offset);
-  // offset += 2;
 
   // 写入参数
   bin.set(new Uint8Array(paramsBuf), offset);

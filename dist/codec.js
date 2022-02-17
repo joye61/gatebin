@@ -47,7 +47,9 @@ export function encode(data) {
                 }
             });
         }
-        params.files = filesMap;
+        if (filesMap.length > 0) {
+            params.files = filesMap;
+        }
         let rawSize = 0;
         let rawBuf = new ArrayBuffer(0);
         if (data.raw.sendAsRaw) {
