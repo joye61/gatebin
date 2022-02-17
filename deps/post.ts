@@ -1,4 +1,4 @@
-import { encode, decode } from "./codec";
+import { encode, decode, buf2str } from "./codec";
 import { config as bgConfig } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 
@@ -108,13 +108,41 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
   return willSendData;
 }
 
+class GatewayResponse implements IGatewayResponse {
+  constructor(public body: Uint8Array, public ctype: string) {}
+  async text(): Promise<string> {
+    return buf2str(this.body.buffer);
+  }
+  async json(): Promise<Record<string, any>> {
+    const str = await buf2str(this.body.buffer);
+    return JSON.parse(str);
+  }
+  async blob(): Promise<Blob> {
+    let option: BlobPropertyBag = {};
+    if (this.ctype) {
+      option.type = this.ctype;
+    }
+    return new Blob([this.body], option);
+  }
+  async arrayBuffer(): Promise<ArrayBuffer> {
+    return this.body.buffer;
+  }
+  async blobUrl(): Promise<string> {
+    const blob = await this.blob();
+    return URL.createObjectURL(blob);
+  }
+}
+
 /**
  * 以二进制形式发送请求
  * @param input
  * @param init
  * @returns
  */
-export async function POST<T>(url: string, option?: PostOption): Promise<T> {
+export async function POST<T>(
+  url: string,
+  option?: PostOption
+): Promise<IGatewayResponse> {
   // 解析输入数据
   const willSendData = getWillSendData(url, option);
 
@@ -129,5 +157,12 @@ export async function POST<T>(url: string, option?: PostOption): Promise<T> {
 
   // 数据解码并将解码结果返回
   const result = await response.arrayBuffer();
-  return decode<T>(result);
+  const decodeData = await decode(result);
+
+  console.log(decodeData, 222)
+
+  return new GatewayResponse(
+    decodeData.body,
+    decodeData.params.headers["Content-Type"] || ""
+  );
 }

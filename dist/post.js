@@ -7,7 +7,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { encode, decode } from "./codec";
+import { encode, decode, buf2str } from "./codec";
 import { config as bgConfig } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 function getWillSendData(url, option) {
@@ -100,6 +100,43 @@ function getWillSendData(url, option) {
     willSendData.headers = headers;
     return willSendData;
 }
+class GatewayResponse {
+    constructor(body, ctype) {
+        this.body = body;
+        this.ctype = ctype;
+    }
+    text() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return buf2str(this.body.buffer);
+        });
+    }
+    json() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const str = yield buf2str(this.body.buffer);
+            return JSON.parse(str);
+        });
+    }
+    blob() {
+        return __awaiter(this, void 0, void 0, function* () {
+            let option = {};
+            if (this.ctype) {
+                option.type = this.ctype;
+            }
+            return new Blob([this.body], option);
+        });
+    }
+    arrayBuffer() {
+        return __awaiter(this, void 0, void 0, function* () {
+            return this.body.buffer;
+        });
+    }
+    blobUrl() {
+        return __awaiter(this, void 0, void 0, function* () {
+            const blob = yield this.blob();
+            return URL.createObjectURL(blob);
+        });
+    }
+}
 export function POST(url, option) {
     return __awaiter(this, void 0, void 0, function* () {
         const willSendData = getWillSendData(url, option);
@@ -109,6 +146,8 @@ export function POST(url, option) {
             body: data.buffer,
         });
         const result = yield response.arrayBuffer();
-        return decode(result);
+        const decodeData = yield decode(result);
+        console.log(decodeData, 222);
+        return new GatewayResponse(decodeData.body, decodeData.params.headers["Content-Type"] || "");
     });
 }

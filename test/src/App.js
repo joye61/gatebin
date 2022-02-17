@@ -3,7 +3,7 @@ import post from "@";
 
 export default function App() {
   useEffect(() => {
-    post("https://www.chelun.com", {
+    post("https://www.baidu.com", {
       method: "POST",
       // headers: {
       //   "content-type": "application/json",

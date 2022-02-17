@@ -58,7 +58,7 @@ interface WillSendBinParams {
 }
 
 interface WillReceiveBinParams {
-  cookies: Array<{}>;
+  cookies?: Array<{}>;
   headers: Record<string, string>;
   contentLength: number;
 }
@@ -66,4 +66,12 @@ interface WillReceiveBinParams {
 interface DecodeData {
   params: WillReceiveBinParams;
   body: Uint8Array;
+}
+
+interface IGatewayResponse {
+  text(): Promise<string>;
+  json(): Promise<Record<string, any>>;
+  blob(): Promise<Blob>;
+  arrayBuffer(): Promise<ArrayBuffer>;
+  blobUrl(): Promise<string>;
 }
