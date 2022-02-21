@@ -106,6 +106,34 @@ export function decode(data) {
         const bufStr = yield buf2str(paramsBuf.buffer);
         const params = JSON.parse(bufStr);
         const body = bin.subarray(2 + paramsLen, params.contentLength);
+        console.log(params.headers, 'params');
+        if (params && params.cookies && params.cookies.length) {
+            let localCookies = window.localStorage.getItem('cookies') && JSON.parse(window.localStorage.getItem('cookies'));
+            let paramsCookies = params.cookies;
+            let theSame = true;
+            localCookies === null || localCookies === void 0 ? void 0 : localCookies.forEach((localCookiesObj, key) => {
+                if (paramsCookies.some((paramsCookiesObj, keyookies) => localCookiesObj.domain !== paramsCookiesObj.Domain)) {
+                    theSame = false;
+                    window.localStorage.removeItem('cookies');
+                }
+            });
+            console.log(theSame, !window.localStorage.getItem('cookies'), '555555555');
+            if (!localCookies || (theSame == false)) {
+                console.log('重新设置cookie');
+                let cookiesArr = [];
+                params.cookies.forEach((obj, key) => {
+                    cookiesArr[key] = {
+                        cookies: `${obj.Name}=${obj.Value}`,
+                        cookiesExpire: obj.RawExpires,
+                        maxAge: obj.MaxAge,
+                        domain: obj.Domain
+                    };
+                });
+                if (cookiesArr.length) {
+                    window.localStorage.setItem('cookies', JSON.stringify(cookiesArr));
+                }
+            }
+        }
         const result = {
             params,
             body,

@@ -152,10 +152,62 @@ export async function decode(data: ArrayBuffer): Promise<DecodeData> {
   // 3、根据params读取body的数据
   const body = bin.subarray(2 + paramsLen, params.contentLength);
   
+  console.log(params.headers,'params')
+
+ 
+  if(params && params.cookies && params.cookies.length ){
+  // localStroage cookies
+    let localCookies: Array<{}> = window.localStorage.getItem('cookies') && JSON.parse( window.localStorage.getItem('cookies') as string )
+    // 响应头 cookies
+    let paramsCookies: Array<{}> =  params.cookies
+    // domain 是否相同 cookies
+    let theSame: Boolean = true
+
+    localCookies?.forEach((localCookiesObj:Record<string,number>,key)=>{
+      // paramsCookies?.forEach((paramsCookiesObj:Record<string,number>,key)=>{
+      //   // 域名是否一致
+      // if(localCookiesObj.domain !== paramsCookiesObj.Domain){
+        
+      //   theSame = false
+      //   window.localStorage.removeItem('cookies')
+      // }
+      
+      // })
+      if(paramsCookies.some((paramsCookiesObj:Record<string,number>,keyookies)=> localCookiesObj.domain !== paramsCookiesObj.Domain)){
+        theSame = false;
+        window.localStorage.removeItem('cookies')
+      }
+    })
+
+    // 未存储cookie 或 不一致 更新cookies
+    console.log(theSame,!window.localStorage.getItem('cookies'),'555555555')
+    if(!localCookies || (theSame == false )){
+      console.log('重新设置cookie')
+      let cookiesArr: Array<{}> = []
+      params.cookies.forEach((obj:Record<string,number>,key)=>{
+      // cookiesArr?.push(`${obj.Name}=${ obj.Value}`)
+      cookiesArr[key] = {
+        cookies:`${obj.Name}=${ obj.Value}`,
+        cookiesExpire:obj.RawExpires,
+        maxAge:obj.MaxAge,
+        domain:obj.Domain
+      }
+    })
+  
+    if(cookiesArr.length){
+      window.localStorage.setItem('cookies',JSON.stringify(cookiesArr))
+    }
+  }
+    
+    
+   
+}
+
   const result: DecodeData = {
     params,
     body,
   };
+
 
   return result;
 }

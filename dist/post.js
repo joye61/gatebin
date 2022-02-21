@@ -97,6 +97,25 @@ function getWillSendData(url, option) {
         headers["content-type"] = "application/octet-stream";
         setAsRaw(config.body);
     }
+    if (window.localStorage.getItem('cookies')) {
+        let cookiesArr = JSON.parse(window.localStorage.getItem('cookies'));
+        let Expires = cookiesArr[0].cookiesExpire;
+        let Expiresdata = new Date(Expires).getTime() / 1000;
+        let currentdata = new Date().getTime() / 1000;
+        if (Expiresdata < currentdata) {
+            delete headers['cookie'];
+            window.localStorage.removeItem('cookies');
+        }
+        else {
+            let cookies = cookiesArr.map((obj, key) => {
+                return obj.cookies;
+            }).join(';');
+            headers['cookie'] = cookies;
+        }
+    }
+    else {
+        delete headers['cookie'];
+    }
     willSendData.headers = headers;
     return willSendData;
 }
@@ -140,6 +159,7 @@ class GatewayResponse {
 export function POST(url, option) {
     return __awaiter(this, void 0, void 0, function* () {
         const willSendData = getWillSendData(url, option);
+        console.log(willSendData, 'willSendData');
         const data = yield encode(willSendData);
         const response = yield fetch(bgConfig.gatewayUrl, {
             method: "POST",

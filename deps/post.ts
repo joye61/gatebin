@@ -9,6 +9,8 @@ import isPlainObject from "lodash/isPlainObject";
  * @returns
  */
 function getWillSendData(url: string, option?: PostOption): WillSendData {
+  
+  
   // 规范化路径，处理以//开始的路径
   if (url.startsWith("//")) {
     url = window.location.protocol + url;
@@ -21,7 +23,7 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
   if (isPlainObject(option)) {
     config = { ...config, ...option };
   }
-
+ 
   // 将要发送到网关的数据
   const willSendData: WillSendData = {
     url,
@@ -38,6 +40,7 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
       headers[key.toLowerCase()] = config.headers[key];
     }
   }
+  
 
   // 将值设置未原始待传输数据
   const setAsRaw = (content: RawInfo["content"]) => {
@@ -102,7 +105,29 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
     headers["content-type"] = "application/octet-stream";
     setAsRaw(config.body as RawInfo["content"]);
   }
+  // Cookie
+  if(window.localStorage.getItem('cookies') as string){
+    let cookiesArr:Array<{cookiesExpire:string,cookies:string}> = JSON.parse(window.localStorage.getItem('cookies') as string)
+    let Expires = cookiesArr[0].cookiesExpire 
+    
+    let Expiresdata = new Date(Expires).getTime()/1000
+    let currentdata =  new Date().getTime()/1000
+    // 过期
+    if(Expiresdata < currentdata){
+      delete headers['cookie']
+      window.localStorage.removeItem('cookies')
+    }else {
+      let cookies = cookiesArr.map((obj,key)=>{
+        return obj.cookies
+      }).join(';')
+      
+      headers['cookie'] = cookies
+    }
 
+  }else{
+    delete headers['cookie']
+  }
+   
   // 更新headers
   willSendData.headers = headers;
   return willSendData;
@@ -145,7 +170,7 @@ export async function POST<T>(
 ): Promise<IGatewayResponse> {
   // 解析输入数据
   const willSendData = getWillSendData(url, option);
-
+ console.log(willSendData,'willSendData')
   // 编码数据
   const data = await encode(willSendData);
 
