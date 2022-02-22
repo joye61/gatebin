@@ -209,6 +209,32 @@ async function createRequestMessage(
     rawBody.type = 1;
     rawBody.asBinary = new Uint8Array(option.body!.buffer as Uint8Array);
   }
+  // // Cookie
+  // if(window.localStorage.getItem('cookies') as string){
+  //   // 缓存cookie 
+  //   let cookiesArr: WillReceiveBinParams['cookies'] = JSON.parse(window.localStorage.getItem('cookies') as string)
+  //   // 过期时间
+  //   let Expires = cookiesArr![0].RawExpires || ''
+  //   let MaxAge = cookiesArr![0].MaxAge
+
+  //   let Expiresdata = new Date(Expires).getTime()/1000
+  //   let currentdata =  Date.now()/1000
+  //   // 对比是否过期
+  //   if(MaxAge && Expiresdata < currentdata){
+      
+  //     delete headers['cookie']
+  //     window.localStorage.removeItem('cookies')
+
+  //   }else {
+
+  //     let cookies = cookiesArr!.map((obj)=>{
+  //       return obj.cookies
+  //     }).join(';')
+      
+  //     headers['cookie'] = cookies
+  //   }
+
+  // }else{
 
   // body: ohters
   else {

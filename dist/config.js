@@ -5,7 +5,5 @@ export const config = {
             url = "//10.10.33.70:5000/do";
         }
         return url;
-    },
-    encryption: process.env.NODE_ENV === "production",
-    encryptKey: "7-Gd.*u(y@Y&$*&#"
+    }
 };

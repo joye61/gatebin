@@ -1,7 +1,5 @@
 export interface Config {
   gatewayUrl: string;
-  encryption: boolean;
-  encryptKey: string;
 }
 
 export const config: Config = {
@@ -11,10 +9,7 @@ export const config: Config = {
     if (process.env.NODE_ENV !== "production") {
       url = "//10.10.33.70:5000/do";
     }
+    // //10.10.29.70:5000/do
     return url;
-  },
-  // 是否加密
-  encryption: process.env.NODE_ENV === "production",
-  // 加密秘钥
-  encryptKey: "7-Gd.*u(y@Y&$*&#"
+  }
 };
