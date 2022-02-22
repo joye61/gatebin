@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"io"
+	"io/ioutil"
 	"mime"
 	"mime/multipart"
 	"net/http"
@@ -11,35 +13,45 @@ import (
 	"time"
 
 	"github.com/labstack/echo/v4"
-	"golang.org/x/net/context"
+	"google.golang.org/protobuf/proto"
 )
 
 /// 目前只允许GET和POST类型的代理请求
 func ProxyRequest(c echo.Context) error {
-	// 首先解码输入数据
-	pack, err := DecodeBody(c.Request().Body)
+
+	// 解码收到的数据
+	var requestMessage RequestMessage
+	body, err := ioutil.ReadAll(c.Request().Body)
+	if err != nil {
+		return err
+	}
+	err = proto.Unmarshal(body, &requestMessage)
 	if err != nil {
 		return err
 	}
 
-	// 读取接收到的参数
-	data := pack.Params
-	method := strings.ToUpper(data.Method)
-
 	// 重新拼装请求头
-	header := c.Request().Header.Clone()
-	if data.Headers != nil {
-		for key, value := range data.Headers {
-			header.Set(key, value)
-		}
+	headers := c.Request().Header.Clone()
+	reqHeaders := requestMessage.GetHeaders()
+	for key, value := range reqHeaders {
+		headers.Set(key, value)
 	}
 
-	// 解析并拼装请求体
-	var body io.Reader
-	if data.Raw.SendAsRaw {
-		body = bytes.NewReader(pack.Raw)
+	// 封装请求体
+	rawBody := requestMessage.GetRawBody()
+	var sendBody io.Reader
+	if rawBody.GetEnabled() {
+		ctype := rawBody.GetType()
+		if ctype == 0 {
+			content := rawBody.GetAsPlain()
+			// 文本原始内容
+			sendBody = bytes.NewReader([]byte(content))
+		} else if ctype == 1 {
+			// 二进制原始内容
+			sendBody = bytes.NewReader(rawBody.GetAsBinary())
+		}
 	} else {
-		ctype := header.Get("Content-Type")
+		ctype := headers.Get("Content-Type")
 		mtype, _, err := mime.ParseMediaType(ctype)
 		if err != nil {
 			return err
@@ -47,27 +59,28 @@ func ProxyRequest(c echo.Context) error {
 		switch mtype {
 		case "application/x-www-form-urlencoded":
 			values := url.Values{}
-			for key, value := range data.Params {
+			for key, value := range requestMessage.GetParams() {
 				result := ConvertValueToStr(value)
 				values.Add(key, result)
 			}
-			body = bytes.NewReader([]byte(values.Encode()))
+			sendBody = bytes.NewReader([]byte(values.Encode()))
 		case "multipart/form-data":
-			body := &bytes.Buffer{}
-			multi := multipart.NewWriter(body)
+			w := &bytes.Buffer{}
+			multi := multipart.NewWriter(w)
 			// 填充数据字段
-			for key, value := range data.Params {
+			for key, value := range requestMessage.GetParams() {
 				result := ConvertValueToStr(value)
 				multi.WriteField(key, result)
 			}
 			// 填充文件
-			for index, item := range data.Files {
-				fw, err := multi.CreateFormFile(item.FieldName, item.FileName)
+			for _, item := range requestMessage.GetFiles() {
+				fw, err := multi.CreateFormFile(item.Key, item.Name)
 				if err == nil {
-					fw.Write(pack.Files[index])
+					fw.Write(item.Data)
 				}
 			}
 			multi.Close()
+			sendBody = w
 		}
 	}
 
@@ -76,17 +89,52 @@ func ProxyRequest(c echo.Context) error {
 	defer cancel()
 
 	// 创建请求对象
-	req, err := http.NewRequestWithContext(ctx, method, data.Url, body)
+	req, err := http.NewRequestWithContext(
+		ctx,
+		requestMessage.GetMethod(),
+		requestMessage.GetUrl(),
+		sendBody,
+	)
 	if err != nil {
 		return err
 	}
 	// 更新请求头
-	req.Header = header
+	req.Header = headers
 	// 发送请求
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
 	}
+
+	// 声明响应消息
+	var responseMessage = &ResponseMessage{
+		Code: uint32(resp.StatusCode),
+	}
+
+	// 设置COOKIE
+	var cookies []*Cookie
+	for _, cookie := range resp.Cookies() {
+		cookies = append(cookies, &Cookie{
+			Name:    cookie.Name,
+			Value:   cookie.Value,
+			Path:    cookie.Path,
+			Domain:  cookie.Domain,
+			Expires: cookie.RawExpires,
+			MaxAge:  int32(cookie.MaxAge),
+			Raw:     cookie.Raw,
+		})
+	}
+	responseMessage.Cookies = cookies
+	resp.Header.Del("Set-Cookie")
+
+	// 设置头部
+	respHeaders := map[string]*HeaderValue{}
+	for key, value := range resp.Header {
+		respHeaders[strings.ToLower(key)] = &HeaderValue{
+			Value: value,
+		}
+	}
+	responseMessage.Headers = respHeaders
 
 	// 响应体有可能是gzip压缩之后的数据
 	compress := resp.Header.Get("Content-Encoding")
@@ -94,20 +142,13 @@ func ProxyRequest(c echo.Context) error {
 	if err != nil {
 		return err
 	}
+	responseMessage.Body = respBody
 
-	cookies := resp.Cookies()
-	resp.Header.Del("Set-Cookie")
-
-	params := &OutParams{
-		Headers:       resp.Header,
-		Cookies:       cookies,
-		ContentLength: uint64(len(respBody)),
-	}
-	realBody, err := EncodeBody(params, respBody)
-
+	// 响应消息进行编码
+	respData, err := proto.Marshal(responseMessage)
 	if err != nil {
 		return err
 	}
 
-	return c.Blob(http.StatusOK, echo.MIMEOctetStream, realBody)
+	return c.Blob(http.StatusOK, echo.MIMEApplicationProtobuf, respData)
 }

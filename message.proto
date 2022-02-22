@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package main;
+
+option go_package = "./main";
+
+message Cookie {
+  string name = 1;
+  string value = 2;
+  string path = 3;
+  string domain = 4;
+  string expires = 5;
+  int32 maxAge = 6;
+  string raw = 7;
+}
+
+message File {
+  string key = 1;
+  string name = 2;
+  bytes data = 3;
+}
+
+message HeaderValue {
+  repeated string value = 1;
+}
+
+// enable=false的时候，其他字段无意义
+message RawBody {
+  // 是否启用原始类型发送
+  bool enabled = 1;
+  enum RawBodyType {
+    // 纯文本类型
+    Plain = 0;
+    // 二进制类型
+    Binary = 1;
+  }
+  // 当前原始类型
+  RawBodyType type = 2;
+  // 原始类型对应数据
+  oneof rawData {
+    string asPlain = 3;
+    bytes asBinary = 4;
+  };
+}
+
+// 请求消息体
+message RequestMessage {
+  string url = 1;
+  string method = 2;
+  map<string, string> headers = 3;
+  map<string, string> params = 4;
+  RawBody rawBody = 5;
+  repeated File files = 6;
+}
+
+// 响应消息体
+message ResponseMessage {
+  uint32 code = 1;
+  map<string, HeaderValue> headers = 2;
+  repeated Cookie cookies = 3;
+  bytes body = 4;
+}

@@ -7,100 +7,139 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-import { encode, decode, buf2str } from "./codec";
+import pbRoot from "./message";
+import { buf2str } from "./codec";
 import { config as bgConfig } from "./config";
 import isPlainObject from "lodash/isPlainObject";
-function getWillSendData(url, option) {
-    if (url.startsWith("//")) {
-        url = window.location.protocol + url;
-    }
-    let config = {
-        method: "GET",
-    };
-    if (isPlainObject(option)) {
-        config = Object.assign(Object.assign({}, config), option);
-    }
-    const willSendData = {
-        url,
-        method: config.method.toUpperCase(),
-        raw: {
-            sendAsRaw: false,
-        },
-    };
-    const headers = {};
-    if (config.headers) {
-        for (let key in config.headers) {
-            headers[key.toLowerCase()] = config.headers[key];
+import isTypedArray from "lodash/isTypedArray";
+import typeParse from "content-type";
+import { CtypeName, Ctypes } from "./type";
+function normalizeParams(input) {
+    const output = {};
+    if (isPlainObject(input)) {
+        for (let key in input) {
+            output[key] = String(input[key]);
         }
     }
-    const setAsRaw = (content) => {
-        willSendData.raw.sendAsRaw = true;
-        willSendData.raw.content = content;
-    };
-    if (config.body instanceof URLSearchParams) {
-        headers["content-type"] = "application/x-www-form-urlencoded";
-        const params = {};
-        config.body.forEach((value, key) => {
-            params[key] = value;
-        });
-        willSendData.params = params;
-    }
-    else if (config.body instanceof FormData) {
-        headers["content-type"] = "multipart/form-data";
-        const params = {};
-        const files = [];
-        config.body.forEach((value, key) => {
-            if (value instanceof File) {
-                files.push({
-                    filedName: key,
-                    size: value.size,
-                    file: value,
-                    fileName: value.name,
-                });
+    return output;
+}
+function createRequestMessage(url, option) {
+    var _a, _b;
+    return __awaiter(this, void 0, void 0, function* () {
+        if (url.startsWith("//")) {
+            url = window.location.protocol + url;
+        }
+        const defaultOption = {
+            method: "GET",
+        };
+        if (isPlainObject(option)) {
+            option = Object.assign(Object.assign({}, defaultOption), option);
+        }
+        else {
+            option = defaultOption;
+        }
+        const message = {
+            url,
+            method: (_b = (_a = option.method) === null || _a === void 0 ? void 0 : _a.toUpperCase()) !== null && _b !== void 0 ? _b : "GET",
+            headers: {},
+            params: {},
+            rawBody: {
+                enabled: false,
+            },
+            files: [],
+        };
+        const rawBody = message.rawBody;
+        if (option.headers) {
+            for (let key in option.headers) {
+                message.headers[key.toLowerCase()] = option.headers[key];
+            }
+        }
+        let userCtype = "";
+        if (message.headers[CtypeName]) {
+            const parseResult = typeParse.parse(message.headers[CtypeName] || "");
+            userCtype = parseResult.type;
+        }
+        if (option.body instanceof URLSearchParams) {
+            message.headers[CtypeName] = Ctypes.UrlEncoded;
+            const params = {};
+            for (const [key, value] of option.body) {
+                params[key] = String(value);
+            }
+        }
+        else if (option.body instanceof FormData) {
+            message.headers[CtypeName] = Ctypes.FormData;
+            const params = {};
+            const files = [];
+            for (const [key, value] of option.body.entries()) {
+                if (value instanceof File) {
+                    const buf = yield value.arrayBuffer();
+                    files.push({
+                        key,
+                        name: value.name,
+                        data: new Uint8Array(buf),
+                    });
+                }
+                else {
+                    params[key] = String(key);
+                }
+            }
+        }
+        else if (isPlainObject(option.body)) {
+            if (userCtype === Ctypes.Json) {
+                message.headers[CtypeName] = Ctypes.Json;
+                rawBody.enabled = true;
+                rawBody.type = 0;
+                rawBody.asPlain = JSON.stringify(option.body);
+            }
+            else if (userCtype === Ctypes.FormData) {
+                message.headers[CtypeName] = Ctypes.FormData;
+                message.params = normalizeParams(option.body);
             }
             else {
-                params[key] = value;
+                message.headers[CtypeName] = Ctypes.UrlEncoded;
+                message.params = normalizeParams(option.body);
             }
-        });
-        willSendData.params = params;
-        willSendData.files = files;
-    }
-    else if (config.body instanceof Blob) {
-        if (config.body.type) {
-            headers["content-type"] = config.body.type;
+        }
+        else if (typeof option.body === "string") {
+            message.headers[CtypeName] = Ctypes.Text;
+            rawBody.enabled = true;
+            rawBody.type = 0;
+            rawBody.asPlain = option.body;
+        }
+        else if (option.body instanceof Blob) {
+            if (option.body.type) {
+                message.headers[CtypeName] = option.body.type;
+            }
+            else {
+                message.headers[CtypeName] = Ctypes.OctetStream;
+            }
+            const buf = yield option.body.arrayBuffer();
+            rawBody.enabled = true;
+            rawBody.type = 1;
+            rawBody.asBinary = new Uint8Array(buf);
+        }
+        else if (option.body instanceof ArrayBuffer) {
+            message.headers[CtypeName] = Ctypes.OctetStream;
+            rawBody.enabled = true;
+            rawBody.type = 1;
+            rawBody.asBinary = new Uint8Array(option.body);
+        }
+        else if (isTypedArray(option.body)) {
+            message.headers[CtypeName] = Ctypes.OctetStream;
+            rawBody.enabled = true;
+            rawBody.type = 1;
+            rawBody.asBinary = new Uint8Array(option.body.buffer);
         }
         else {
-            headers["content-type"] = "application/octet-stream";
+            message.headers[CtypeName] = Ctypes.Text;
+            rawBody.enabled = true;
+            rawBody.type = 0;
+            rawBody.asPlain = String(option.body);
         }
-        setAsRaw(config.body);
-    }
-    else if (isPlainObject(config.body)) {
-        const ctype = headers["content-type"];
-        if (ctype === "application/json") {
-            headers["content-type"] = "application/json";
-            setAsRaw(JSON.stringify(config.body));
-        }
-        else if (ctype === "multipart/form-data") {
-            headers["content-type"] = "multipart/form-data";
-            willSendData.params = config.body;
-        }
-        else {
-            headers["content-type"] = "application/x-www-form-urlencoded";
-            willSendData.params = config.body;
-        }
-    }
-    else if (typeof config.body === "string") {
-        headers["content-type"] = "text/plain";
-        setAsRaw(config.body);
-    }
-    else {
-        headers["content-type"] = "application/octet-stream";
-        setAsRaw(config.body);
-    }
-    willSendData.headers = headers;
-    return willSendData;
+        return message;
+    });
 }
-class GatewayResponse {
+export class GatewayResponse {
     constructor(body, ctype) {
         this.body = body;
         this.ctype = ctype;
@@ -138,16 +177,27 @@ class GatewayResponse {
     }
 }
 export function POST(url, option) {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
-        const willSendData = getWillSendData(url, option);
-        const data = yield encode(willSendData);
+        const payload = yield createRequestMessage(url, option);
+        const message = pbRoot.lookupType("main.RequestMessage");
+        const verifyErr = message.verify(payload);
+        if (verifyErr) {
+            throw new Error(`Message verification failure: ${verifyErr}`);
+        }
+        const pbMessage = message.create(payload);
+        const buffer = message.encode(pbMessage).finish();
         const response = yield fetch(bgConfig.gatewayUrl, {
             method: "POST",
-            body: data.buffer,
+            body: buffer,
         });
-        const result = yield response.arrayBuffer();
-        const decodeData = yield decode(result);
-        console.log(decodeData, 222);
-        return new GatewayResponse(decodeData.body, decodeData.params.headers["Content-Type"] || "");
+        const protobuf = yield response.arrayBuffer();
+        const respMessage = pbRoot.lookupType("main.ResponseMessage");
+        const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
+        const result = respMessage.toObject(respPbMessage);
+        console.log("Remote Response: \n\n", result, "\n\n");
+        const ctype = ((_a = result.headers[CtypeName]) === null || _a === void 0 ? void 0 : _a.value[0]) || "";
+        const gresp = new GatewayResponse(result.body, ctype);
+        return gresp;
     });
 }

@@ -8,7 +8,10 @@
     "clear": "rm -rfv ./dist",
     "watch:ts": "tsc --pretty -w",
     "watch:test": "cd ./test && npm start",
-    "build": "npm run clear && tsc"
+    "build": "npm run clear && tsc",
+    "gen-message-json": "pbjs -t json-module --es6 ./message.proto -o ./deps/message.js",
+    "gen-message-go": "protoc --proto_path=. --go_out=./gateway --go_opt=paths=source_relative message.proto",
+    "gen": "npm run gen-message-json && npm run gen-message-go"
   },
   "repository": {
     "type": "git",
@@ -21,13 +24,16 @@
   "author": "joye",
   "license": "MIT",
   "devDependencies": {
+    "@types/content-type": "^1.1.5",
     "@types/lodash": "^4.14.178",
     "@types/pako": "^1.0.3",
     "concurrently": "^7.0.0",
     "typescript": "^4.5.5"
   },
   "dependencies": {
+    "content-type": "^1.0.4",
     "lodash": "^4.17.21",
-    "pako": "^2.0.4"
+    "pako": "^2.0.4",
+    "protobufjs": "^6.11.2"
   }
 }
