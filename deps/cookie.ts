@@ -16,6 +16,39 @@ const cookieCache: CookieStore = {};
 // baidu.com
 // b.baidu.com
 // a.b.baidu.com
+const  cookiesObjFn = ( cookie: Cookie,storaObj: CookieStore)=>{
+ 
+
+  let isSameDomain = Object.keys(storaObj).indexOf(cookie.domain.slice(1)) >= 0
+
+    if(isSameDomain){
+     
+      storaObj[cookie.domain].push({
+        setTime:Date.now(),
+        name:cookie.name,
+        value:cookie.value,
+        path:cookie.path,
+        domain:cookie.domain,
+        expires:cookie.expires,
+        maxAge:cookie.maxAge,
+        raw:cookie.raw
+      })
+
+    }else{
+      storaObj[cookie.domain] = [{
+        setTime:Date.now(),
+        name:cookie.name,
+        value:cookie.value,
+        path:cookie.path,
+        domain:cookie.domain,
+        expires:cookie.expires,
+        maxAge:cookie.maxAge,
+        raw:cookie.raw
+      }]
+    }
+
+
+}
 
 /**
  * 接收到服务端下发的cookie
@@ -23,6 +56,39 @@ const cookieCache: CookieStore = {};
  */
 export function handleReceivedCookies(cookies?: Cookie[]) {
   if (!Array.isArray(cookies) || cookies.length === 0) return;
+
+  let localCookiesObj: CookieStore = {}
+
+  let sessionCookiesObj: CookieStore = {}
+
+  if(window.localStorage.getItem('cookiesObj')){
+    localCookiesObj = JSON.parse(window.localStorage.getItem('cookiesObj') as string)
+  }
+  
+  if(window.sessionStorage.getItem('cookiesObj')){
+    sessionCookiesObj = JSON.parse(window.sessionStorage.getItem('cookiesObj') as string)
+  }
+
+  cookies.forEach((cookie,key)=>{
+    if(cookie.expires || cookie.maxAge>=0){
+
+      cookiesObjFn(cookie,localCookiesObj)
+
+      
+
+      window.localStorage.setItem('cookiesObj',JSON.stringify(localCookiesObj))
+      
+    }else{
+      
+     
+      cookiesObjFn(cookie,sessionCookiesObj)
+      
+      window.sessionStorage.setItem('cookiesObj',JSON.stringify(sessionCookiesObj))
+
+    }
+  })
+
+
 }
 
 export function getWillSendCookies(url: string): string {
@@ -82,7 +148,17 @@ export function getWillSendCookies(url: string): string {
   }
 
   // 
+  let readCookies: string= readList.map((i)=>{
+    return cookies![i].name+cookies![i].value
+  
+  }).join(';')
 
+
+  if(readCookies){
+    return readCookies
+  }else{
+    return output
+  }
   
 
   //1、判断domain匹配
