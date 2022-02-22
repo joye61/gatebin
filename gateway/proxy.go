@@ -9,6 +9,7 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -150,5 +151,8 @@ func ProxyRequest(c echo.Context) error {
 		return err
 	}
 
+	// 填充响应头中的内容长度
+	c.Response().Header().Set("Content-Length", strconv.FormatInt(int64(len(respData)), 10))
+	// 发送响应
 	return c.Blob(http.StatusOK, echo.MIMEApplicationProtobuf, respData)
 }

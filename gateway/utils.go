@@ -80,3 +80,13 @@ func Compress(data []byte, method string) ([]byte, error) {
 		return data, nil
 	}
 }
+
+// 判断列表中是否包含某个元素
+func Contains(list []string, item string) bool {
+	for _, value := range list {
+		if value == item {
+			return true
+		}
+	}
+	return false
+}
