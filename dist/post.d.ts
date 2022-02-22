@@ -31,10 +31,21 @@ export interface Cookie {
     maxAge: number;
     raw: string;
 }
-export declare class GatewayResponse implements IGatewayResponse {
+interface HeaderValue {
+    value: string[];
+}
+interface ResponseMessage {
+    code: number;
+    headers: Record<string, HeaderValue>;
+    cookies: Cookie[];
     body: Uint8Array;
-    ctype: string;
-    constructor(body: Uint8Array, ctype: string);
+}
+export declare class GatewayResponse implements IGatewayResponse {
+    message: ResponseMessage;
+    code: number;
+    body: Uint8Array;
+    headers: Record<string, HeaderValue>;
+    constructor(message: ResponseMessage);
     text(): Promise<string>;
     json(): Promise<Record<string, any>>;
     blob(): Promise<Blob>;
@@ -42,3 +53,4 @@ export declare class GatewayResponse implements IGatewayResponse {
     blobUrl(): Promise<string>;
 }
 export declare function POST(url: string, option?: PostOption): Promise<IGatewayResponse>;
+export {};

@@ -16,6 +16,17 @@ export function str2buf(str) {
 export function buf2str(buffer) {
     return __awaiter(this, void 0, void 0, function* () {
         const blob = new Blob([buffer], { type: "text/plain" });
-        return blob.text();
+        if (typeof blob.text === "function") {
+            return blob.text();
+        }
+        else {
+            return yield new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.addEventListener("load", () => {
+                    resolve(reader.result);
+                });
+                reader.readAsText(blob);
+            });
+        }
     });
 }

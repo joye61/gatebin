@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import pbRoot from "./message";
 import { buf2str } from "./codec";
-import { config as bgConfig } from "./config";
+import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
@@ -145,9 +145,11 @@ function createRequestMessage(url, option) {
     });
 }
 export class GatewayResponse {
-    constructor(body, ctype) {
-        this.body = body;
-        this.ctype = ctype;
+    constructor(message) {
+        this.message = message;
+        this.code = message.code;
+        this.body = message.body;
+        this.headers = message.headers;
     }
     text() {
         return __awaiter(this, void 0, void 0, function* () {
@@ -161,10 +163,12 @@ export class GatewayResponse {
         });
     }
     blob() {
+        var _a;
         return __awaiter(this, void 0, void 0, function* () {
             let option = {};
-            if (this.ctype) {
-                option.type = this.ctype;
+            const contentType = ((_a = this.headers[CtypeName]) === null || _a === void 0 ? void 0 : _a.value[0]) || "";
+            if (contentType) {
+                option.type = contentType;
             }
             return new Blob([this.body], option);
         });
@@ -182,7 +186,6 @@ export class GatewayResponse {
     }
 }
 export function POST(url, option) {
-    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         const payload = yield createRequestMessage(url, option);
         const message = pbRoot.lookupType("main.RequestMessage");
@@ -192,7 +195,7 @@ export function POST(url, option) {
         }
         const pbMessage = message.create(payload);
         const buffer = message.encode(pbMessage).finish();
-        const response = yield fetch(bgConfig.gatewayUrl, {
+        const response = yield fetch(config.url, {
             method: "POST",
             body: buffer,
         });
@@ -204,8 +207,6 @@ export function POST(url, option) {
             console.log("Remote Response: \n\n", result, "\n\n");
         }
         handleReceivedCookies(result.cookies);
-        const ctype = ((_a = result.headers[CtypeName]) === null || _a === void 0 ? void 0 : _a.value[0]) || "";
-        const gresp = new GatewayResponse(result.body, ctype);
-        return gresp;
+        return new GatewayResponse(result);
     });
 }

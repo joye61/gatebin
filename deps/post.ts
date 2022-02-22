@@ -1,6 +1,6 @@
 import pbRoot from "./message";
 import { buf2str } from "./codec";
-import { config as bgConfig } from "./config";
+import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
@@ -210,32 +210,6 @@ async function createRequestMessage(
     rawBody.type = 1;
     rawBody.asBinary = new Uint8Array(option.body!.buffer as Uint8Array);
   }
-  // // Cookie
-  // if(window.localStorage.getItem('cookies') as string){
-  //   // 缓存cookie
-  //   let cookiesArr: WillReceiveBinParams['cookies'] = JSON.parse(window.localStorage.getItem('cookies') as string)
-  //   // 过期时间
-  //   let Expires = cookiesArr![0].RawExpires || ''
-  //   let MaxAge = cookiesArr![0].MaxAge
-
-  //   let Expiresdata = new Date(Expires).getTime()/1000
-  //   let currentdata =  Date.now()/1000
-  //   // 对比是否过期
-  //   if(MaxAge && Expiresdata < currentdata){
-
-  //     delete headers['cookie']
-  //     window.localStorage.removeItem('cookies')
-
-  //   }else {
-
-  //     let cookies = cookiesArr!.map((obj)=>{
-  //       return obj.cookies
-  //     }).join(';')
-
-  //     headers['cookie'] = cookies
-  //   }
-
-  // }else{
 
   // body: ohters
   else {
@@ -258,24 +232,58 @@ async function createRequestMessage(
  * 网关响应体消息的类型
  */
 export class GatewayResponse implements IGatewayResponse {
-  constructor(public body: Uint8Array, public ctype: string) {}
+  code: number;
+  body: Uint8Array;
+  headers: Record<string, HeaderValue>;
+
+  constructor(public message: ResponseMessage) {
+    this.code = message.code;
+    this.body = message.body;
+    this.headers = message.headers;
+  }
+
+  /**
+   * 以文本格式返回
+   * @returns
+   */
   async text(): Promise<string> {
     return buf2str(this.body.buffer);
   }
+
+  /**
+   * 将结果解析为json
+   * @returns
+   */
   async json(): Promise<Record<string, any>> {
     const str = await buf2str(this.body.buffer);
     return JSON.parse(str);
   }
+
+  /**
+   * 返回Blob
+   * @returns
+   */
   async blob(): Promise<Blob> {
     let option: BlobPropertyBag = {};
-    if (this.ctype) {
-      option.type = this.ctype;
+    const contentType = this.headers[CtypeName]?.value[0] || "";
+    if (contentType) {
+      option.type = contentType;
     }
     return new Blob([this.body], option);
   }
+
+  /**
+   * 返回ArrayBuffer
+   * @returns
+   */
   async arrayBuffer(): Promise<ArrayBuffer> {
     return this.body.buffer;
   }
+
+  /**
+   * 以BlobURL的格式返回
+   * @returns
+   */
   async blobUrl(): Promise<string> {
     const blob = await this.blob();
     return URL.createObjectURL(blob);
@@ -303,7 +311,7 @@ export async function POST(
   const buffer = message.encode(pbMessage).finish();
 
   // 发送请求到网关
-  const response = await fetch(bgConfig.gatewayUrl, {
+  const response = await fetch(config.url, {
     method: "POST",
     body: buffer,
   });
@@ -322,7 +330,5 @@ export async function POST(
   handleReceivedCookies(result.cookies);
 
   // 读取响应类型
-  const ctype = result.headers[CtypeName]?.value[0] || "";
-  const gresp = new GatewayResponse(result.body, ctype);
-  return gresp;
+  return new GatewayResponse(result);
 }

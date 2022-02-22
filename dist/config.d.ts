@@ -1,4 +1,5 @@
-export interface Config {
-    gatewayUrl: string;
+export interface GatewayConfig {
+    url: string;
 }
-export declare const config: Config;
+export declare const config: GatewayConfig;
+export declare function updateConfig(option: GatewayConfig): void;
