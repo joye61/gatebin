@@ -107,17 +107,23 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
   }
   // Cookie
   if(window.localStorage.getItem('cookies') as string){
+    // 缓存cookie 
     let cookiesArr:Array<{cookiesExpire:string,cookies:string}> = JSON.parse(window.localStorage.getItem('cookies') as string)
+    // 过期时间
     let Expires = cookiesArr[0].cookiesExpire 
     
+
     let Expiresdata = new Date(Expires).getTime()/1000
-    let currentdata =  new Date().getTime()/1000
-    // 过期
+    let currentdata =  Date.now()/1000
+    // 对比是否过期
     if(Expiresdata < currentdata){
+      
       delete headers['cookie']
       window.localStorage.removeItem('cookies')
+
     }else {
-      let cookies = cookiesArr.map((obj,key)=>{
+
+      let cookies = cookiesArr.map((obj)=>{
         return obj.cookies
       }).join(';')
       
@@ -125,6 +131,7 @@ function getWillSendData(url: string, option?: PostOption): WillSendData {
     }
 
   }else{
+
     delete headers['cookie']
   }
    

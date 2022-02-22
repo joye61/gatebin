@@ -1,3 +1,4 @@
+import { now } from "lodash";
 import isTypedArray from "lodash/isTypedArray";
 import zlib from "pako";
 
@@ -154,38 +155,29 @@ export async function decode(data: ArrayBuffer): Promise<DecodeData> {
   
   console.log(params.headers,'params')
 
- 
+  //  cookie
   if(params && params.cookies && params.cookies.length ){
   // localStroage cookies
     let localCookies: Array<{}> = window.localStorage.getItem('cookies') && JSON.parse( window.localStorage.getItem('cookies') as string )
     // 响应头 cookies
     let paramsCookies: Array<{}> =  params.cookies
     // domain 是否相同 cookies
-    let theSame: Boolean = true
-
-    localCookies?.forEach((localCookiesObj:Record<string,number>,key)=>{
-      // paramsCookies?.forEach((paramsCookiesObj:Record<string,number>,key)=>{
-      //   // 域名是否一致
-      // if(localCookiesObj.domain !== paramsCookiesObj.Domain){
-        
-      //   theSame = false
-      //   window.localStorage.removeItem('cookies')
-      // }
+    let isSame: Boolean = true
+    // 对比域名
+    localCookies?.forEach((localCookiesObj:Record<string,number>)=>{
       
-      // })
-      if(paramsCookies.some((paramsCookiesObj:Record<string,number>,keyookies)=> localCookiesObj.domain !== paramsCookiesObj.Domain)){
-        theSame = false;
+      if(paramsCookies.some((paramsCookiesObj:Record<string,number>)=> localCookiesObj.domain !== paramsCookiesObj.Domain)){
+        isSame = false;
         window.localStorage.removeItem('cookies')
       }
     })
 
-    // 未存储cookie 或 不一致 更新cookies
-    console.log(theSame,!window.localStorage.getItem('cookies'),'555555555')
-    if(!localCookies || (theSame == false )){
+    // 未存储cookie 或 不一致时 存储更新cookies
+    if(!localCookies || (isSame == false )){
       console.log('重新设置cookie')
       let cookiesArr: Array<{}> = []
       params.cookies.forEach((obj:Record<string,number>,key)=>{
-      // cookiesArr?.push(`${obj.Name}=${ obj.Value}`)
+      
       cookiesArr[key] = {
         cookies:`${obj.Name}=${ obj.Value}`,
         cookiesExpire:obj.RawExpires,
@@ -198,8 +190,6 @@ export async function decode(data: ArrayBuffer): Promise<DecodeData> {
       window.localStorage.setItem('cookies',JSON.stringify(cookiesArr))
     }
   }
-    
-    
    
 }
 

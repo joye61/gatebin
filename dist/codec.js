@@ -110,15 +110,14 @@ export function decode(data) {
         if (params && params.cookies && params.cookies.length) {
             let localCookies = window.localStorage.getItem('cookies') && JSON.parse(window.localStorage.getItem('cookies'));
             let paramsCookies = params.cookies;
-            let theSame = true;
-            localCookies === null || localCookies === void 0 ? void 0 : localCookies.forEach((localCookiesObj, key) => {
-                if (paramsCookies.some((paramsCookiesObj, keyookies) => localCookiesObj.domain !== paramsCookiesObj.Domain)) {
-                    theSame = false;
+            let isSame = true;
+            localCookies === null || localCookies === void 0 ? void 0 : localCookies.forEach((localCookiesObj) => {
+                if (paramsCookies.some((paramsCookiesObj) => localCookiesObj.domain !== paramsCookiesObj.Domain)) {
+                    isSame = false;
                     window.localStorage.removeItem('cookies');
                 }
             });
-            console.log(theSame, !window.localStorage.getItem('cookies'), '555555555');
-            if (!localCookies || (theSame == false)) {
+            if (!localCookies || (isSame == false)) {
                 console.log('重新设置cookie');
                 let cookiesArr = [];
                 params.cookies.forEach((obj, key) => {

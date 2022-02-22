@@ -13,19 +13,15 @@ type FileItem = {
 
 type cookiesItem = {
   // 名称
-  Name: string;
-  // 值
-  Value: number;
+  cookies: string;
   // 有效期
-  Expire?: File;
+  cookiesExpire?: File;
   // 有效期 时间戳 比expire优先级高
-  MaxAge?: number;
+  maxAge?: number;
   // 服务器路径
   Path?:string;
   // 域名
   Domain?:string;
-  // 是否通过安全的 HTTPS 连接来传输 cookie
-  Secure?:Boolean;
 };
 
 type TypedArray =

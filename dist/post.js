@@ -101,13 +101,13 @@ function getWillSendData(url, option) {
         let cookiesArr = JSON.parse(window.localStorage.getItem('cookies'));
         let Expires = cookiesArr[0].cookiesExpire;
         let Expiresdata = new Date(Expires).getTime() / 1000;
-        let currentdata = new Date().getTime() / 1000;
+        let currentdata = Date.now() / 1000;
         if (Expiresdata < currentdata) {
             delete headers['cookie'];
             window.localStorage.removeItem('cookies');
         }
         else {
-            let cookies = cookiesArr.map((obj, key) => {
+            let cookies = cookiesArr.map((obj) => {
                 return obj.cookies;
             }).join(';');
             headers['cookie'] = cookies;
