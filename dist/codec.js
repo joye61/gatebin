@@ -108,11 +108,12 @@ export function decode(data) {
         const body = bin.subarray(2 + paramsLen, params.contentLength);
         console.log(params.headers, 'params');
         if (params && params.cookies && params.cookies.length) {
-            let localCookies = window.localStorage.getItem('cookies') && JSON.parse(window.localStorage.getItem('cookies'));
+            let localCookiesArr = window.localStorage.getItem('cookies');
+            let localCookies = localCookiesArr && JSON.parse(localCookiesArr);
             let paramsCookies = params.cookies;
             let isSame = true;
             localCookies === null || localCookies === void 0 ? void 0 : localCookies.forEach((localCookiesObj) => {
-                if (paramsCookies.some((paramsCookiesObj) => localCookiesObj.domain !== paramsCookiesObj.Domain)) {
+                if (paramsCookies.some((paramsCookiesObj) => localCookiesObj.Domain !== paramsCookiesObj.Domain)) {
                     isSame = false;
                     window.localStorage.removeItem('cookies');
                 }
@@ -123,9 +124,9 @@ export function decode(data) {
                 params.cookies.forEach((obj, key) => {
                     cookiesArr[key] = {
                         cookies: `${obj.Name}=${obj.Value}`,
-                        cookiesExpire: obj.RawExpires,
-                        maxAge: obj.MaxAge,
-                        domain: obj.Domain
+                        RawExpires: obj.RawExpires,
+                        MaxAge: obj.MaxAge,
+                        Domain: obj.Domain
                     };
                 });
                 if (cookiesArr.length) {

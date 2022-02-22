@@ -157,8 +157,9 @@ export async function decode(data: ArrayBuffer): Promise<DecodeData> {
 
   //  cookie
   if(params && params.cookies && params.cookies.length ){
+    let localCookiesArr = window.localStorage.getItem('cookies') 
   // localStroage cookies
-    let localCookies: Array<{}> = window.localStorage.getItem('cookies') && JSON.parse( window.localStorage.getItem('cookies') as string )
+    let localCookies: Array<{}> = localCookiesArr && JSON.parse( localCookiesArr as string )
     // 响应头 cookies
     let paramsCookies: Array<{}> =  params.cookies
     // domain 是否相同 cookies
@@ -166,7 +167,7 @@ export async function decode(data: ArrayBuffer): Promise<DecodeData> {
     // 对比域名
     localCookies?.forEach((localCookiesObj:Record<string,number>)=>{
       
-      if(paramsCookies.some((paramsCookiesObj:Record<string,number>)=> localCookiesObj.domain !== paramsCookiesObj.Domain)){
+      if(paramsCookies.some((paramsCookiesObj:Record<string,number>)=> localCookiesObj.Domain !== paramsCookiesObj.Domain)){
         isSame = false;
         window.localStorage.removeItem('cookies')
       }
@@ -175,14 +176,14 @@ export async function decode(data: ArrayBuffer): Promise<DecodeData> {
     // 未存储cookie 或 不一致时 存储更新cookies
     if(!localCookies || (isSame == false )){
       console.log('重新设置cookie')
-      let cookiesArr: Array<{}> = []
-      params.cookies.forEach((obj:Record<string,number>,key)=>{
+      let cookiesArr:  WillReceiveBinParams['cookies'] = []
+      params.cookies.forEach((obj:CookiesItem,key)=>{
       
-      cookiesArr[key] = {
+      cookiesArr![key] = {
         cookies:`${obj.Name}=${ obj.Value}`,
-        cookiesExpire:obj.RawExpires,
-        maxAge:obj.MaxAge,
-        domain:obj.Domain
+        RawExpires:obj.RawExpires,
+        MaxAge:obj.MaxAge,
+        Domain:obj.Domain
       }
     })
   

@@ -11,17 +11,20 @@ type FileItem = {
   fileName: string;
 };
 
-type cookiesItem = {
-  // 名称
+type CookiesItem = {
+  // cookie name=value
   cookies: string;
+  // 名称
+  Name?: string;
+  // 值
+  Value?: string;
   // 有效期
-  cookiesExpire?: File;
+  RawExpires?: string;
   // 有效期 时间戳 比expire优先级高
-  maxAge?: number;
-  // 服务器路径
-  Path?:string;
+  MaxAge?: number;
   // 域名
   Domain?:string;
+
 };
 
 type TypedArray =
@@ -71,7 +74,7 @@ interface WillSendBinParams {
 }
 
 interface WillReceiveBinParams {
-  cookies?: Array<{}>;
+  cookies?: Array<CookiesItem>;
   headers: Record<string, string>;
   contentLength: number;
 }

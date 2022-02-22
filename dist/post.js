@@ -99,10 +99,11 @@ function getWillSendData(url, option) {
     }
     if (window.localStorage.getItem('cookies')) {
         let cookiesArr = JSON.parse(window.localStorage.getItem('cookies'));
-        let Expires = cookiesArr[0].cookiesExpire;
+        let Expires = cookiesArr[0].RawExpires || '';
+        let MaxAge = cookiesArr[0].MaxAge;
         let Expiresdata = new Date(Expires).getTime() / 1000;
         let currentdata = Date.now() / 1000;
-        if (Expiresdata < currentdata) {
+        if (MaxAge && Expiresdata < currentdata) {
             delete headers['cookie'];
             window.localStorage.removeItem('cookies');
         }
