@@ -14,6 +14,7 @@ import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
+import { getWillSendCookies, handleReceivedCookies } from "./cookie";
 function normalizeParams(input) {
     const output = {};
     if (isPlainObject(input)) {
@@ -136,6 +137,10 @@ function createRequestMessage(url, option) {
             rawBody.type = 0;
             rawBody.asPlain = String(option.body);
         }
+        const cookies = getWillSendCookies(url);
+        if (cookies) {
+            message.headers["cookie"] = cookies;
+        }
         return message;
     });
 }
@@ -195,7 +200,10 @@ export function POST(url, option) {
         const respMessage = pbRoot.lookupType("main.ResponseMessage");
         const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
         const result = respMessage.toObject(respPbMessage);
-        console.log("Remote Response: \n\n", result, "\n\n");
+        if (process.env.NODE_ENV !== "production") {
+            console.log("Remote Response: \n\n", result, "\n\n");
+        }
+        handleReceivedCookies(result.cookies);
         const ctype = ((_a = result.headers[CtypeName]) === null || _a === void 0 ? void 0 : _a.value[0]) || "";
         const gresp = new GatewayResponse(result.body, ctype);
         return gresp;

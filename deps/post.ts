@@ -6,6 +6,7 @@ import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { type Namespace } from "protobufjs";
+import { getWillSendCookies, handleReceivedCookies } from "./cookie";
 
 export interface PostOption {
   body?: XMLHttpRequestBodyInit | Record<string, string>;
@@ -51,7 +52,7 @@ function normalizeParams(input: Record<string, any>): Record<string, string> {
   return output;
 }
 
-interface Cookie {
+export interface Cookie {
   name: string;
   value: string;
   path: string;
@@ -211,7 +212,7 @@ async function createRequestMessage(
   }
   // // Cookie
   // if(window.localStorage.getItem('cookies') as string){
-  //   // 缓存cookie 
+  //   // 缓存cookie
   //   let cookiesArr: WillReceiveBinParams['cookies'] = JSON.parse(window.localStorage.getItem('cookies') as string)
   //   // 过期时间
   //   let Expires = cookiesArr![0].RawExpires || ''
@@ -221,7 +222,7 @@ async function createRequestMessage(
   //   let currentdata =  Date.now()/1000
   //   // 对比是否过期
   //   if(MaxAge && Expiresdata < currentdata){
-      
+
   //     delete headers['cookie']
   //     window.localStorage.removeItem('cookies')
 
@@ -230,7 +231,7 @@ async function createRequestMessage(
   //     let cookies = cookiesArr!.map((obj)=>{
   //       return obj.cookies
   //     }).join(';')
-      
+
   //     headers['cookie'] = cookies
   //   }
 
@@ -242,6 +243,12 @@ async function createRequestMessage(
     rawBody.enabled = true;
     rawBody.type = 0;
     rawBody.asPlain = String(option.body);
+  }
+
+  // 处理cookie相关
+  const cookies = getWillSendCookies(url);
+  if (cookies) {
+    message.headers["cookie"] = cookies;
   }
 
   return message;
@@ -306,7 +313,13 @@ export async function POST(
   const respMessage = (pbRoot as Namespace).lookupType("main.ResponseMessage");
   const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
   const result = respMessage.toObject(respPbMessage) as ResponseMessage;
-  console.log("Remote Response: \n\n", result, "\n\n");
+
+  if (process.env.NODE_ENV !== "production") {
+    console.log("Remote Response: \n\n", result, "\n\n");
+  }
+
+  // 处理接收到的信息
+  handleReceivedCookies(result.cookies);
 
   // 读取响应类型
   const ctype = result.headers[CtypeName]?.value[0] || "";

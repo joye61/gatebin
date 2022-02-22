@@ -22,6 +22,15 @@ export interface RequestMessage {
     rawBody: RawBody;
     files: FileItem[];
 }
+export interface Cookie {
+    name: string;
+    value: string;
+    path: string;
+    domain: string;
+    expires: string;
+    maxAge: number;
+    raw: string;
+}
 export declare class GatewayResponse implements IGatewayResponse {
     body: Uint8Array;
     ctype: string;
