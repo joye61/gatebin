@@ -123,20 +123,20 @@ func ProxyRequest(c echo.Context) error {
 	}
 
 	// 设置COOKIE
-	var cookies []*Cookie
-	for _, cookie := range resp.Cookies() {
-		cookies = append(cookies, &Cookie{
-			Name:    cookie.Name,
-			Value:   cookie.Value,
-			Path:    cookie.Path,
-			Domain:  cookie.Domain,
-			Expires: cookie.RawExpires,
-			MaxAge:  int32(cookie.MaxAge),
-			Raw:     cookie.Raw,
-		})
-	}
-	responseMessage.Cookies = cookies
-	resp.Header.Del("Set-Cookie")
+	// var cookies []*Cookie
+	// for _, cookie := range resp.Cookies() {
+	// 	cookies = append(cookies, &Cookie{
+	// 		Name:    cookie.Name,
+	// 		Value:   cookie.Value,
+	// 		Path:    cookie.Path,
+	// 		Domain:  cookie.Domain,
+	// 		Expires: cookie.RawExpires,
+	// 		MaxAge:  int32(cookie.MaxAge),
+	// 		Raw:     cookie.Raw,
+	// 	})
+	// }
+	// responseMessage.Cookies = cookies
+	// resp.Header.Del("Set-Cookie")
 
 	// 设置头部
 	respHeaders := map[string]*HeaderValue{}
