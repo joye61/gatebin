@@ -15,7 +15,7 @@ import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
-import { addCookies, getCookiesByUrl } from "./store";
+import { addCookiesByUrl, getCookiesByUrl } from "./store";
 function normalizeParams(input) {
     const output = {};
     if (isPlainObject(input)) {
@@ -266,7 +266,7 @@ export function POST(url, option) {
         if (config.debug) {
             console.log("Response Message: \n\n", result, "\n\n");
         }
-        addCookies(result.cookies);
+        addCookiesByUrl(url, result.cookies);
         return new GatewayResponse(result);
     });
 }

@@ -7,7 +7,7 @@ import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { type Namespace } from "protobufjs";
-import { addCookies, getCookiesByUrl } from "./store";
+import { addCookiesByUrl, getCookiesByUrl } from "./store";
 
 export interface PostOption {
   body?: XMLHttpRequestBodyInit | Record<string, string>;
@@ -404,7 +404,7 @@ export async function POST(
   }
 
   // 处理接收到的信息
-  addCookies(result.cookies);
+  addCookiesByUrl(url, result.cookies);
 
   // 读取响应类型
   return new GatewayResponse(result);
