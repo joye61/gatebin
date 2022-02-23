@@ -15,15 +15,15 @@ async function test() {
 
 export default function App() {
   const [src, setSrc] = useState("");
-  const [params, setparams] = useState({});
+  const [params, setparams] = useState({
+    url: "http://clsp-api.carlink716.com/Common/GetFields",
+  });
 
   async function InterfaceTestFn() {
     setparams({
       url: "http://clsp-api.carlink716.com/Common/GetFields",
-      // method:'GET',
-      // body:{
-
-      // }
+      method: "",
+      body: {},
     });
   }
   // useEffect(() => {
