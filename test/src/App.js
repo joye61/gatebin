@@ -8,7 +8,7 @@ gatewayConfig({
 
 export default function App() {
   useEffect(() => {
-    post("https://www.baidu.com", {
+    post("https://map.baidu.com/search", {
       method: "POST",
       // headers: {
       //   "content-type": "application/json",
