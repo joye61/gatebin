@@ -6,7 +6,7 @@ import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { type Namespace } from "protobufjs";
-import { getWillSendCookies, handleReceivedCookies } from "./cookie";
+import { addCookies, getCookiesByUrl } from "./store";
 
 export interface PostOption {
   body?: XMLHttpRequestBodyInit | Record<string, string>;
@@ -219,10 +219,14 @@ async function createRequestMessage(
     rawBody.asPlain = String(option.body);
   }
 
-  // 处理cookie相关
-  const cookies = getWillSendCookies(url);
-  if (cookies) {
-    message.headers["cookie"] = cookies;
+  // cookie相关逻辑
+  const cookies = getCookiesByUrl(url);
+  if (cookies.length) {
+    let cookieStr = "";
+    cookies.forEach((item) => {
+      cookieStr += `${item.name}=${item.value}; `;
+    });
+    message.headers["cookie"] = cookieStr.trimEnd();
   }
 
   return message;
@@ -300,7 +304,6 @@ export async function POST(
   url: string,
   option?: PostOption
 ): Promise<IGatewayResponse> {
-
   // 创建消息
   const payload = await createRequestMessage(url, option);
 
@@ -341,7 +344,7 @@ export async function POST(
   }
 
   // 处理接收到的信息
-  handleReceivedCookies(result.cookies);
+  addCookies(result.cookies);
 
   // 读取响应类型
   return new GatewayResponse(result);

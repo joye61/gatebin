@@ -32,20 +32,19 @@ export function getValuesByKey(key: string) {
   return { localValue, sessionValue };
 }
 
-export function addCookiesByUrl(url: string, items: Array<Cookie>) {
-  const urlObj = new URL(url);
+/**
+ * 通过URL下发cookie
+ * @param url
+ * @param items
+ */
+export function addCookies(items?: Array<Cookie>) {
+  if (!Array.isArray(items)) return;
+
   for (let item of items) {
     // 根据最新规范，domain前的点号忽略，如：.a.com = a.com
     const domain = item.domain.replace(/^\./, "");
 
-    // 当前服务器不能下发跟自己无关的cookie
-    // 如：baidu.com 不能下发chelun.com的cookie
-    // 但：chelun.com可以下发a.chelun.com的cookie
-    if (!domain.endsWith(urlObj.hostname)) {
-      continue;
-    }
-
-    const key = config.cacheKey + ":" + domain;
+    const key = config.cacheKey + "." + domain;
     const { localValue, sessionValue } = getValuesByKey(key);
 
     // 不管maxAge是什么值，先删除旧的cookie数据
@@ -67,8 +66,12 @@ export function addCookiesByUrl(url: string, items: Array<Cookie>) {
     }
 
     // 更新存储
-    localStore.setItem(key, JSON.stringify(localValue));
-    sessionStore.setItem(key, JSON.stringify(sessionValue));
+    if (Object.keys(localValue).length) {
+      localStore.setItem(key, JSON.stringify(localValue));
+    }
+    if (Object.keys(sessionValue).length) {
+      sessionStore.setItem(key, JSON.stringify(sessionValue));
+    }
   }
 }
 
@@ -92,42 +95,48 @@ export function getCookiesByUrl(url: string): CookieStoreItem[] {
   // c.com | b.c.com | a.b.c.com
   const output: CookieStoreItem[] = [];
   for (let domain of checks) {
-    const key = config.cacheKey + ":" + domain;
+    const key = config.cacheKey + "." + domain;
     const { localValue, sessionValue } = getValuesByKey(key);
 
-    // local的值要判断过期逻辑，如果过期，则删除
-    const names = Object.keys(localValue);
-    for (let name of names) {
-      const item = localValue[name];
-      // 首先判断是否过期，如果过期，则要删除
-      if (
-        item.maxAge <= 0 ||
-        Date.now() / 1000 >= item.startTime + item.maxAge
-      ) {
-        delete localValue[name];
-        continue;
+    // 只有存储中有值的时候才读取
+    if (Object.keys(localValue).length) {
+      // local的值要判断过期逻辑，如果过期，则删除
+      const names = Object.keys(localValue);
+      for (let name of names) {
+        const item = localValue[name];
+        // 首先判断是否过期，如果过期，则要删除
+        if (
+          item.maxAge <= 0 ||
+          Date.now() / 1000 >= item.startTime + item.maxAge
+        ) {
+          delete localValue[name];
+          continue;
+        }
+
+        // 判断cookie的路径是否匹配
+        if (!urlObj.pathname.startsWith(item.path)) {
+          continue;
+        }
+
+        // 既没有过期，路径也匹配，放入结果中
+        output.push(item);
       }
 
-      // 判断cookie的路径是否匹配
-      if (!urlObj.pathname.startsWith(item.path)) {
-        continue;
-      }
-
-      // 既没有过期，路径也匹配，放入结果中
-      output.push(item);
+      // 将处理之后的local值重新存储
+      localStore.setItem(key, JSON.stringify(localValue));
     }
 
-    // 将处理之后的local值重新存储
-    localStore.setItem(key, JSON.stringify(localValue));
-
-    // session的值不用处理过期逻辑，浏览器会自动删除
-    for (let name in sessionValue) {
-      const item = sessionValue[name];
-      // 判断cookie的路径是否匹配
-      if (!urlObj.pathname.startsWith(item.path)) {
-        continue;
+    // 只有存储中有值的时候才读取
+    if (Object.keys(sessionValue).length) {
+      // session的值不用处理过期逻辑，浏览器会自动删除
+      for (let name in sessionValue) {
+        const item = sessionValue[name];
+        // 判断cookie的路径是否匹配
+        if (!urlObj.pathname.startsWith(item.path)) {
+          continue;
+        }
+        output.push(item);
       }
-      output.push(item);
     }
   }
 

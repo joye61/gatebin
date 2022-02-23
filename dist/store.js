@@ -14,14 +14,12 @@ export function getValuesByKey(key) {
     }
     return { localValue, sessionValue };
 }
-export function addCookiesByUrl(url, items) {
-    const urlObj = new URL(url);
+export function addCookies(items) {
+    if (!Array.isArray(items))
+        return;
     for (let item of items) {
         const domain = item.domain.replace(/^\./, "");
-        if (!domain.endsWith(urlObj.hostname)) {
-            continue;
-        }
-        const key = config.cacheKey + ":" + domain;
+        const key = config.cacheKey + "." + domain;
         const { localValue, sessionValue } = getValuesByKey(key);
         delete localValue[item.name];
         delete sessionValue[item.name];
@@ -33,8 +31,12 @@ export function addCookiesByUrl(url, items) {
         else if (item.maxAge < 0) {
             sessionValue[item.name] = storeValue;
         }
-        localStore.setItem(key, JSON.stringify(localValue));
-        sessionStore.setItem(key, JSON.stringify(sessionValue));
+        if (Object.keys(localValue).length) {
+            localStore.setItem(key, JSON.stringify(localValue));
+        }
+        if (Object.keys(sessionValue).length) {
+            sessionStore.setItem(key, JSON.stringify(sessionValue));
+        }
     }
 }
 export function getCookiesByUrl(url) {
@@ -48,28 +50,32 @@ export function getCookiesByUrl(url) {
     }
     const output = [];
     for (let domain of checks) {
-        const key = config.cacheKey + ":" + domain;
+        const key = config.cacheKey + "." + domain;
         const { localValue, sessionValue } = getValuesByKey(key);
-        const names = Object.keys(localValue);
-        for (let name of names) {
-            const item = localValue[name];
-            if (item.maxAge <= 0 ||
-                Date.now() / 1000 >= item.startTime + item.maxAge) {
-                delete localValue[name];
-                continue;
+        if (Object.keys(localValue).length) {
+            const names = Object.keys(localValue);
+            for (let name of names) {
+                const item = localValue[name];
+                if (item.maxAge <= 0 ||
+                    Date.now() / 1000 >= item.startTime + item.maxAge) {
+                    delete localValue[name];
+                    continue;
+                }
+                if (!urlObj.pathname.startsWith(item.path)) {
+                    continue;
+                }
+                output.push(item);
             }
-            if (!urlObj.pathname.startsWith(item.path)) {
-                continue;
-            }
-            output.push(item);
+            localStore.setItem(key, JSON.stringify(localValue));
         }
-        localStore.setItem(key, JSON.stringify(localValue));
-        for (let name in sessionValue) {
-            const item = sessionValue[name];
-            if (!urlObj.pathname.startsWith(item.path)) {
-                continue;
+        if (Object.keys(sessionValue).length) {
+            for (let name in sessionValue) {
+                const item = sessionValue[name];
+                if (!urlObj.pathname.startsWith(item.path)) {
+                    continue;
+                }
+                output.push(item);
             }
-            output.push(item);
         }
     }
     return output;

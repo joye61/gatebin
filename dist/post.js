@@ -14,7 +14,7 @@ import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
-import { getWillSendCookies, handleReceivedCookies } from "./cookie";
+import { addCookies, getCookiesByUrl } from "./store";
 function normalizeParams(input) {
     const output = {};
     if (isPlainObject(input)) {
@@ -137,9 +137,13 @@ function createRequestMessage(url, option) {
             rawBody.type = 0;
             rawBody.asPlain = String(option.body);
         }
-        const cookies = getWillSendCookies(url);
-        if (cookies) {
-            message.headers["cookie"] = cookies;
+        const cookies = getCookiesByUrl(url);
+        if (cookies.length) {
+            let cookieStr = "";
+            cookies.forEach((item) => {
+                cookieStr += `${item.name}=${item.value}; `;
+            });
+            message.headers["cookie"] = cookieStr.trimEnd();
         }
         return message;
     });
@@ -212,7 +216,7 @@ export function POST(url, option) {
         if (config.debug) {
             console.log("Response Message: \n\n", result, "\n\n");
         }
-        handleReceivedCookies(result.cookies);
+        addCookies(result.cookies);
         return new GatewayResponse(result);
     });
 }
