@@ -7,7 +7,7 @@ interface CookieStore {
   [key: string]: Array<CookieStoreItem>;
 }
 
-const cookieCache: CookieStore = {};
+let cookieCache: CookieStore = {};
 
 // b.baidu.com
 
@@ -19,35 +19,16 @@ const cookieCache: CookieStore = {};
 const  cookiesObjFn = ( cookie: Cookie,storaObj: CookieStore)=>{
  
 
-  let isSameDomain = Object.keys(storaObj).indexOf(cookie.domain.slice(1)) >= 0
-
-    if(isSameDomain){
-     
-      storaObj[cookie.domain].push({
-        setTime:Date.now(),
-        name:cookie.name,
-        value:cookie.value,
-        path:cookie.path,
-        domain:cookie.domain,
-        expires:cookie.expires,
-        maxAge:cookie.maxAge,
-        raw:cookie.raw
-      })
-
-    }else{
-      storaObj[cookie.domain] = [{
-        setTime:Date.now(),
-        name:cookie.name,
-        value:cookie.value,
-        path:cookie.path,
-        domain:cookie.domain,
-        expires:cookie.expires,
-        maxAge:cookie.maxAge,
-        raw:cookie.raw
-      }]
+  let isSameDomain = Object.keys(storaObj).indexOf(cookie.domain) >= 0
+  
+    if(!isSameDomain){
+      storaObj[cookie.domain] = []
     }
 
-
+    storaObj[cookie.domain].push({
+      setTime:Date.now()/1000,
+      ...cookie
+    })
 }
 
 /**
@@ -62,29 +43,27 @@ export function handleReceivedCookies(cookies?: Cookie[]) {
   let sessionCookiesObj: CookieStore = {}
 
   if(window.localStorage.getItem('cookiesObj')){
-    localCookiesObj = JSON.parse(window.localStorage.getItem('cookiesObj') as string)
+    localCookiesObj = JSON.parse(window.localStorage.getItem('cookiesObj') as string) || {}
   }
   
   if(window.sessionStorage.getItem('cookiesObj')){
-    sessionCookiesObj = JSON.parse(window.sessionStorage.getItem('cookiesObj') as string)
+    sessionCookiesObj = JSON.parse(window.sessionStorage.getItem('cookiesObj') as string) || {}
   }
 
   cookies.forEach((cookie,key)=>{
     if(cookie.expires || cookie.maxAge>=0){
 
       cookiesObjFn(cookie,localCookiesObj)
-
-      
-
       window.localStorage.setItem('cookiesObj',JSON.stringify(localCookiesObj))
       
     }else{
       
-     
-      cookiesObjFn(cookie,sessionCookiesObj)
+      if(cookie.maxAge == -1){
+        cookiesObjFn(cookie,sessionCookiesObj)
       
-      window.sessionStorage.setItem('cookiesObj',JSON.stringify(sessionCookiesObj))
-
+         window.sessionStorage.setItem('cookiesObj',JSON.stringify(sessionCookiesObj))
+      }
+     
     }
   })
 
@@ -94,6 +73,7 @@ export function handleReceivedCookies(cookies?: Cookie[]) {
 export function getWillSendCookies(url: string): string {
   let output = "";
   const urlObj = new URL(url);
+  let domainName = ''
 
   // domain匹配
   const parts = urlObj.hostname.split(".");
@@ -104,9 +84,11 @@ export function getWillSendCookies(url: string): string {
     possibleDomains.push(tmpDomain);
   }
   let cookies: Array<CookieStoreItem> | undefined = undefined;
+  cookieCache = JSON.parse(window.localStorage.getItem('cookiesObj') as string) || {};
   for (let i = 0; i < possibleDomains.length; i++) {
     if (cookieCache[possibleDomains[i]]) {
       cookies = cookieCache[possibleDomains[i]];
+      domainName = possibleDomains[i]
       break;
     }
   }
@@ -115,20 +97,28 @@ export function getWillSendCookies(url: string): string {
   if (!cookies || cookies.length == 0) {
     return output;
   }
-
+console.log(cookies,'cookies')
+ 
   const expireIndex: number[] = [];
   const readList: number[] = [];
   const now = Date.now() / 1000;
+
+  cookies[0].maxAge = 0
+  // cookies[3].maxAge = -1
   for (let i = 0; i < cookies.length; i++) {
     const cookie = cookies[i];
     if (urlObj.pathname.startsWith(cookie.path)) {
       // 判断是否过期 maxAge
       if (typeof cookie.maxAge === "number") {
+       
         // 如果cookie过期
-        if (cookie.setTime + cookie.maxAge < now) {
+        console.log(cookie.setTime+cookie.maxAge,now)
+        if ((cookie.maxAge <=0) ||(cookie.setTime + cookie.maxAge < now)) {
           expireIndex.push(i);
+          
         } else {
           readList.push(i);
+          
         }
       }
       // 判断是否过期 maxAge
@@ -146,14 +136,22 @@ export function getWillSendCookies(url: string): string {
       }
     }
   }
+  // cookie过期  cookieCache
+  if(expireIndex && expireIndex.length){
+    expireIndex.map((i)=>{
+      cookieCache[domainName].splice(i,1)
+    })
+  }
+  window.localStorage.setItem('cookiesObj',JSON.stringify(cookieCache))
 
-  // 
-  let readCookies: string= readList.map((i)=>{
+  // cookie可读列表
+  let readCookies: string = readList.map((i)=>{
     return cookies![i].name+cookies![i].value
   
   }).join(';')
 
-
+  
+  
   if(readCookies){
     return readCookies
   }else{
