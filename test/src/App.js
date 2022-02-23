@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import post, { gatewayConfig } from "@";
 
 gatewayConfig({
@@ -6,23 +6,32 @@ gatewayConfig({
   entry: "//10.10.33.70:9003/do",
 });
 
+async function test() {
+  const resp = await post("https://map.baidu.com/search");
+  const result = await resp.text();
+  console.log(result, 1111);
+}
+
 export default function App() {
+  const [src, setSrc] = useState("");
+
   useEffect(() => {
-    post("https://www.baidu.com", {
-      method: "POST",
-      // headers: {
-      //   "content-type": "application/json",
-      // },
-      body: {
-        a: 1,
-        b: "hello world 你好世界11",
-        c: true,
-        d: undefined,
-        e: null,
-        f: 1.92,
-      },
-    });
+    (async () => {
+      const resp = await post(
+        "https://www.chelun.com/_next/static/css/0bfb61fb670cefde6350.css"
+      );
+      const result = await resp.blobUrl();
+      setSrc(result);
+      setTimeout(()=>{
+        // resp.download()
+      }, 3000)
+    })();
   }, []);
 
-  return <>hello world</>;
+  return (
+    <>
+      hello world
+      {src && <img src={src} width="600" />}
+    </>
+  );
 }

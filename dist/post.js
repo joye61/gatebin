@@ -8,14 +8,14 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 import pbRoot from "./message";
-import { buf2str } from "./codec";
+import zlib from "pako";
+import { buf2str, str2buf } from "./codec";
 import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { addCookies, getCookiesByUrl } from "./store";
-import zlib from "pako";
 function normalizeParams(input) {
     const output = {};
     if (isPlainObject(input)) {
@@ -28,9 +28,6 @@ function normalizeParams(input) {
 function createRequestMessage(url, option) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
-        if (url.startsWith("//")) {
-            url = window.location.protocol + url;
-        }
         const message = {
             url,
             method: (_b = (_a = option.method) === null || _a === void 0 ? void 0 : _a.toUpperCase()) !== null && _b !== void 0 ? _b : "GET",
@@ -127,7 +124,7 @@ function createRequestMessage(url, option) {
             message.headers[CtypeName] = Ctypes.Text;
             rawBody.enabled = true;
             rawBody.type = 0;
-            rawBody.asPlain = String(option.body);
+            rawBody.asPlain = "";
         }
         const cookies = getCookiesByUrl(url);
         if (cookies.length) {
@@ -149,12 +146,12 @@ export class GatewayResponse {
     }
     text() {
         return __awaiter(this, void 0, void 0, function* () {
-            return buf2str(this.body.buffer);
+            return buf2str(this.body);
         });
     }
     json() {
         return __awaiter(this, void 0, void 0, function* () {
-            const str = yield buf2str(this.body.buffer);
+            const str = yield this.text();
             return JSON.parse(str);
         });
     }
@@ -180,9 +177,43 @@ export class GatewayResponse {
             return URL.createObjectURL(blob);
         });
     }
+    download(name) {
+        var _a;
+        return __awaiter(this, void 0, void 0, function* () {
+            const url = yield this.blobUrl();
+            const link = document.createElement("a");
+            let finalName = name !== null && name !== void 0 ? name : "download";
+            const disposition = (_a = this.headers["content-disposition"]) === null || _a === void 0 ? void 0 : _a.value;
+            if (Array.isArray(disposition)) {
+                const regRes = disposition[0].match(/filename\=\"(.*?)\"/);
+                if (regRes === null || regRes === void 0 ? void 0 : regRes[1]) {
+                    name = regRes[1];
+                }
+            }
+            link.download = finalName;
+            link.href = url;
+            link.click();
+            window.setTimeout(() => {
+                link.remove();
+            }, 0);
+        });
+    }
 }
 export function POST(url, option) {
     return __awaiter(this, void 0, void 0, function* () {
+        if (/^data\:(.+)?(;base64)?,/.test(url)) {
+            const buf = yield str2buf(url);
+            const dataResult = {
+                code: 200,
+                headers: {},
+                cookies: [],
+                body: new Uint8Array(buf),
+            };
+            return new GatewayResponse(dataResult);
+        }
+        if (url.startsWith("//")) {
+            url = window.location.protocol + url;
+        }
         const defaultOption = {
             method: "GET",
             compress: true,

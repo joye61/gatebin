@@ -2,7 +2,6 @@ import isPlainObject from "lodash/isPlainObject";
 export const config = {
     debug: false,
     entry: "",
-    compress: false,
     cacheKey: "__bin_gateway",
 };
 export function gatewayConfig(option) {
