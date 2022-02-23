@@ -15,6 +15,7 @@ import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { addCookies, getCookiesByUrl } from "./store";
+import zlib from "pako";
 function normalizeParams(input) {
     const output = {};
     if (isPlainObject(input)) {
@@ -29,15 +30,6 @@ function createRequestMessage(url, option) {
     return __awaiter(this, void 0, void 0, function* () {
         if (url.startsWith("//")) {
             url = window.location.protocol + url;
-        }
-        const defaultOption = {
-            method: "GET",
-        };
-        if (isPlainObject(option)) {
-            option = Object.assign(Object.assign({}, defaultOption), option);
-        }
-        else {
-            option = defaultOption;
         }
         const message = {
             url,
@@ -139,11 +131,11 @@ function createRequestMessage(url, option) {
         }
         const cookies = getCookiesByUrl(url);
         if (cookies.length) {
-            let cookieStr = "";
+            let cookieArr = [];
             cookies.forEach((item) => {
-                cookieStr += `${item.name}=${item.value}; `;
+                cookieArr.push(`${item.name}=${item.value}`);
             });
-            message.headers["cookie"] = cookieStr.trimEnd();
+            message.headers["cookie"] = cookieArr.join("; ");
         }
         return message;
     });
@@ -191,6 +183,16 @@ export class GatewayResponse {
 }
 export function POST(url, option) {
     return __awaiter(this, void 0, void 0, function* () {
+        const defaultOption = {
+            method: "GET",
+            compress: true,
+        };
+        if (isPlainObject(option)) {
+            option = Object.assign(Object.assign({}, defaultOption), option);
+        }
+        else {
+            option = defaultOption;
+        }
         const payload = yield createRequestMessage(url, option);
         if (config.debug) {
             console.log(`Request Message: \n\n`, payload, "\n\n");
@@ -205,11 +207,27 @@ export function POST(url, option) {
         if (!config.entry) {
             throw new Error(`Gateway entry address cannot be empty`);
         }
+        let finalBuffer;
+        if (option.compress) {
+            const zlibBuffer = zlib.deflate(buffer);
+            finalBuffer = new Uint8Array(1 + zlibBuffer.byteLength);
+            finalBuffer.set(Uint8Array.of(1), 0);
+            finalBuffer.set(zlibBuffer, 1);
+        }
+        else {
+            finalBuffer = new Uint8Array(1 + buffer.byteLength);
+            finalBuffer.set(Uint8Array.of(0), 0);
+            finalBuffer.set(buffer, 1);
+        }
         const response = yield fetch(config.entry, {
             method: "POST",
-            body: buffer,
+            body: finalBuffer,
         });
-        const protobuf = yield response.arrayBuffer();
+        let responseBuf = yield response.arrayBuffer();
+        let protobuf = new Uint8Array(responseBuf);
+        if (option.compress) {
+            protobuf = zlib.inflate(protobuf);
+        }
         const respMessage = pbRoot.lookupType("main.ResponseMessage");
         const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
         const result = respMessage.toObject(respPbMessage);

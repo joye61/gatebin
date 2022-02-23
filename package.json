@@ -1,7 +1,7 @@
 {
   "name": "bin-gateway",
   "version": "0.0.1",
-  "description": "车轮前端二进制网关",
+  "description": "通用二进制网关",
   "main": "./dist/index.js",
   "scripts": {
     "start": "npm run clear && tsc && concurrently --timings npm:watch:ts npm:watch:test",

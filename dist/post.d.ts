@@ -2,6 +2,7 @@ export interface PostOption {
     body?: XMLHttpRequestBodyInit | Record<string, string>;
     headers?: Record<string, string>;
     method?: string;
+    compress?: boolean;
 }
 export interface FileItem {
     key: string;
