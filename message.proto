@@ -4,16 +4,6 @@ package main;
 
 option go_package = "./main";
 
-message Cookie {
-  string name = 1;
-  string value = 2;
-  string path = 3;
-  string domain = 4;
-  string expires = 5;
-  int32 maxAge = 6;
-  string raw = 7;
-}
-
 message File {
   string key = 1;
   string name = 2;
@@ -57,6 +47,5 @@ message RequestMessage {
 message ResponseMessage {
   uint32 code = 1;
   map<string, HeaderValue> headers = 2;
-  repeated Cookie cookies = 3;
   bytes body = 4;
 }

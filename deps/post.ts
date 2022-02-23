@@ -404,7 +404,7 @@ export async function POST(
   }
 
   // 处理接收到的信息
-  addCookiesByUrl(url, result.cookies);
+  addCookiesByUrl(url, result.headers?.["set-cookie"].value);
 
   // 读取响应类型
   return new GatewayResponse(result);

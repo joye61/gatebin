@@ -13,38 +13,6 @@
                 go_package: "./main"
             },
             nested: {
-                Cookie: {
-                    fields: {
-                        name: {
-                            type: "string",
-                            id: 1
-                        },
-                        value: {
-                            type: "string",
-                            id: 2
-                        },
-                        path: {
-                            type: "string",
-                            id: 3
-                        },
-                        domain: {
-                            type: "string",
-                            id: 4
-                        },
-                        expires: {
-                            type: "string",
-                            id: 5
-                        },
-                        maxAge: {
-                            type: "int32",
-                            id: 6
-                        },
-                        raw: {
-                            type: "string",
-                            id: 7
-                        }
-                    }
-                },
                 File: {
                     fields: {
                         key: {
@@ -147,11 +115,6 @@
                             keyType: "string",
                             type: "HeaderValue",
                             id: 2
-                        },
-                        cookies: {
-                            rule: "repeated",
-                            type: "Cookie",
-                            id: 3
                         },
                         body: {
                             type: "bytes",

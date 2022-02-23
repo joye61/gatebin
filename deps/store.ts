@@ -1,8 +1,17 @@
 import { config } from "./config";
-import { type Cookie } from "./post";
+import parser from "set-cookie-parser";
 
 const localStore = window.localStorage;
 const sessionStore = window.sessionStorage;
+
+export interface Cookie {
+  name: string;
+  value: string;
+  path: string;
+  domain: string;
+  maxAge: number;
+  startTime: number;
+}
 
 export interface CookieStoreItem extends Cookie {
   // 设置cookie时的时间
@@ -37,45 +46,65 @@ export function getValuesByKey(key: string) {
  * @param url
  * @param items
  */
-export function addCookiesByUrl(url: string, items?: Array<Cookie>) {
+export function addCookiesByUrl(url: string, items?: Array<string>) {
   if (!Array.isArray(items)) return;
   const urlObj = new URL(url);
-  for (let item of items) {
-    // 如果domain未设置，则默认当前cookie和请求url的主机保持一致
-    if (!item.domain) {
-      item.domain = urlObj.hostname;
-    }
-    // 根据最新规范，domain前的点号忽略，如：.a.com = a.com
-    const domain = item.domain.replace(/^\./, "");
+  const startTime = Date.now();
 
-    const key = config.cacheKey + "." + domain;
+  // 解析cookie数据
+  const cookies: Cookie[] = parser(items).map((item) => {
+    // 确保domain值存在
+    let domain = urlObj.hostname;
+    if (item.domain) {
+      domain = item.domain.replace(/^\./, "");
+    }
+
+    // 确保path值存在
+    let path = "/";
+    if (item.path) {
+      path = item.path;
+    }
+
+    // 用maxAge取代expires，保证maxAge始终存在
+    let maxAge = item.maxAge;
+    if (!maxAge) {
+      // 如果maxAge不存在，但是expires存在
+      if (item.expires instanceof Date) {
+        maxAge = (item.expires.valueOf() - startTime) / 1000;
+      } else {
+        // 如果maxAge和expires都不存在，session生命周期
+        maxAge = -1;
+      }
+    }
+
+    return {
+      name: item.name,
+      value: item.value,
+      path,
+      domain,
+      maxAge: maxAge!,
+      startTime,
+    };
+  });
+
+  // 存储cookie
+  for (let item of cookies) {
+    const key = config.cacheKey + "." + item.domain;
     const { localValue, sessionValue } = getValuesByKey(key);
 
     // 不管maxAge是什么值，先删除旧的cookie数据
     delete localValue[item.name];
     delete sessionValue[item.name];
 
-    // 设置新的cookie值，同一个cookie不可能同时存储于local和session中
-    const startTime = Date.now() / 1000;
-    const storeValue: CookieStoreItem = {
-      startTime,
-      ...item,
-    };
-
-    // 如果maxAge不存在，但是expires存在
-    if (item.maxAge === undefined && item.expires) {
-      item.maxAge = (Date.parse(item.expires) - startTime) / 1000;
-    }
-    // 如果maxAge和expires都不存在，认为是session
-    else if (item.maxAge === undefined && item.expires === undefined) {
-      item.maxAge = -1;
-    }
-
     // maxAge=0代表立即删除cookie，不做任何操作
     if (item.maxAge > 0) {
-      localValue[item.name] = storeValue;
+      // >0 时为正常带过期时间的cookie
+      localValue[item.name] = item;
     } else if (item.maxAge < 0) {
-      sessionValue[item.name] = storeValue;
+      // <0 时浏览器关闭自动清除
+      sessionValue[item.name] = item;
+    } else {
+      // =0 时直接删除，前面已经删了
     }
 
     // 更新存储

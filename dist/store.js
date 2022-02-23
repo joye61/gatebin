@@ -1,4 +1,5 @@
 import { config } from "./config";
+import parser from "set-cookie-parser";
 const localStore = window.localStorage;
 const sessionStore = window.sessionStorage;
 export function getValuesByKey(key) {
@@ -18,28 +19,46 @@ export function addCookiesByUrl(url, items) {
     if (!Array.isArray(items))
         return;
     const urlObj = new URL(url);
-    for (let item of items) {
-        if (!item.domain) {
-            item.domain = urlObj.hostname;
+    const startTime = Date.now();
+    const cookies = parser(items).map((item) => {
+        let domain = urlObj.hostname;
+        if (item.domain) {
+            domain = item.domain.replace(/^\./, "");
         }
-        const domain = item.domain.replace(/^\./, "");
-        const key = config.cacheKey + "." + domain;
+        let path = "/";
+        if (item.path) {
+            path = item.path;
+        }
+        let maxAge = item.maxAge;
+        if (!maxAge) {
+            if (item.expires instanceof Date) {
+                maxAge = (item.expires.valueOf() - startTime) / 1000;
+            }
+            else {
+                maxAge = -1;
+            }
+        }
+        return {
+            name: item.name,
+            value: item.value,
+            path,
+            domain,
+            maxAge: maxAge,
+            startTime,
+        };
+    });
+    for (let item of cookies) {
+        const key = config.cacheKey + "." + item.domain;
         const { localValue, sessionValue } = getValuesByKey(key);
         delete localValue[item.name];
         delete sessionValue[item.name];
-        const startTime = Date.now() / 1000;
-        const storeValue = Object.assign({ startTime }, item);
-        if (item.maxAge === undefined && item.expires) {
-            item.maxAge = (Date.parse(item.expires) - startTime) / 1000;
-        }
-        else if (item.maxAge === undefined && item.expires === undefined) {
-            item.maxAge = -1;
-        }
         if (item.maxAge > 0) {
-            localValue[item.name] = storeValue;
+            localValue[item.name] = item;
         }
         else if (item.maxAge < 0) {
-            sessionValue[item.name] = storeValue;
+            sessionValue[item.name] = item;
+        }
+        else {
         }
         if (Object.keys(localValue).length) {
             localStore.setItem(key, JSON.stringify(localValue));

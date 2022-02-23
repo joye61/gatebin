@@ -200,6 +200,7 @@ export class GatewayResponse {
     }
 }
 export function POST(url, option) {
+    var _a;
     return __awaiter(this, void 0, void 0, function* () {
         if (/^data\:(.+)?(;base64)?,/.test(url) || /^blob\:/.test(url)) {
             const fetchRes = yield fetch(url);
@@ -266,7 +267,7 @@ export function POST(url, option) {
         if (config.debug) {
             console.log("Response Message: \n\n", result, "\n\n");
         }
-        addCookiesByUrl(url, result.cookies);
+        addCookiesByUrl(url, (_a = result.headers) === null || _a === void 0 ? void 0 : _a["set-cookie"].value);
         return new GatewayResponse(result);
     });
 }
