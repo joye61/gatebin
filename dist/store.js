@@ -14,10 +14,14 @@ export function getValuesByKey(key) {
     }
     return { localValue, sessionValue };
 }
-export function addCookies(items) {
+export function addCookiesByUrl(url, items) {
     if (!Array.isArray(items))
         return;
+    const urlObj = new URL(url);
     for (let item of items) {
+        if (!item.domain) {
+            item.domain = urlObj.hostname;
+        }
         const domain = item.domain.replace(/^\./, "");
         const key = config.cacheKey + "." + domain;
         const { localValue, sessionValue } = getValuesByKey(key);

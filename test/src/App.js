@@ -8,8 +8,8 @@ gatewayConfig({
 });
 
 async function test() {
-  const resp = await post("https://map.baidu.com/search");
-  const result = await resp.blobUrl();
+  const resp = await post("https://clto.cc/YQ7FtSuk");
+  const result = await resp.text();
   console.log(result, 1111);
 }
 
@@ -17,16 +17,7 @@ export default function App() {
   const [src, setSrc] = useState("");
 
   useEffect(() => {
-    (async () => {
-      const resp = await post(
-        "https://www.chelun.com/_next/static/css/0bfb61fb670cefde6350.css"
-      );
-      const result = await resp.blobUrl();
-      setSrc(result);
-      setTimeout(() => {
-        // resp.download()
-      }, 3000);
-    })();
+    test();
   }, []);
 
   return (

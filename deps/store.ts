@@ -37,10 +37,14 @@ export function getValuesByKey(key: string) {
  * @param url
  * @param items
  */
-export function addCookies(items?: Array<Cookie>) {
+export function addCookiesByUrl(url: string, items?: Array<Cookie>) {
   if (!Array.isArray(items)) return;
-
+  const urlObj = new URL(url);
   for (let item of items) {
+    // 如果domain未设置，则默认当前cookie和请求url的主机保持一致
+    if (!item.domain) {
+      item.domain = urlObj.hostname;
+    }
     // 根据最新规范，domain前的点号忽略，如：.a.com = a.com
     const domain =  item.domain.replace(/^\./, "");
 
