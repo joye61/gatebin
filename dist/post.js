@@ -202,6 +202,9 @@ export class GatewayResponse {
 export function POST(url, option) {
     var _a;
     return __awaiter(this, void 0, void 0, function* () {
+        if (!url) {
+            throw new Error("The request url cannot be empty");
+        }
         if (/^data\:(.+)?(;base64)?,/.test(url) || /^blob\:/.test(url)) {
             const fetchRes = yield fetch(url);
             const fetchBuf = yield fetchRes.arrayBuffer();

@@ -316,6 +316,11 @@ export async function POST(
   url: string,
   option?: PostOption
 ): Promise<IGatewayResponse> {
+  // 请求地址不能为空
+  if (!url) {
+    throw new Error("The request url cannot be empty");
+  }
+
   // 如果url是blobUrl或者DataUrl
   // 直接将结果返回，免除编解码过程
   if (/^data\:(.+)?(;base64)?,/.test(url) || /^blob\:/.test(url)) {
