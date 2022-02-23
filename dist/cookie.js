@@ -1,12 +1,4 @@
 let cookieCache = {};
-const cookiesObjFn = (cookie, storaObj, storeType) => {
-    cookie.domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain;
-    let isSameDomain = Object.keys(storaObj).indexOf(cookie.domain) >= 0;
-    if (!isSameDomain) {
-        storaObj[cookie.domain] = [];
-    }
-    storaObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000, storeType: storeType == 'local' ? 'local' : 'session' }, cookie));
-};
 export function handleReceivedCookies(cookies) {
     if (!Array.isArray(cookies) || cookies.length === 0)
         return;
@@ -21,13 +13,20 @@ export function handleReceivedCookies(cookies) {
         sessionCookiesObj = JSON.parse(sessionStorage) || {};
     }
     cookies.forEach((cookie, key) => {
+        cookie.domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain;
         if (cookie.maxAge >= 0) {
-            cookiesObjFn(cookie, localCookiesObj, 'local');
+            if (key == 0) {
+                localCookiesObj[cookie.domain] = [];
+            }
+            localCookiesObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000, storeType: 'local' }, cookie));
             window.localStorage.setItem('cookiesObj', JSON.stringify(localCookiesObj));
         }
         else {
             if (cookie.maxAge == -1) {
-                cookiesObjFn(cookie, sessionCookiesObj, 'session');
+                if (key == 0) {
+                    sessionCookiesObj[cookie.domain] = [];
+                }
+                sessionCookiesObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000, storeType: 'session' }, cookie));
                 window.sessionStorage.setItem('cookiesObj', JSON.stringify(sessionCookiesObj));
             }
         }

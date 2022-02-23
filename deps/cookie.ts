@@ -20,23 +20,6 @@ let cookieCache: CookieStore = {};
 // b.baidu.com
 // a.b.baidu.com
 
-const  cookiesObjFn = ( cookie: Cookie,storaObj: CookieStore,storeType:string)=>{
-  // 域名开始 . 号切掉
-  cookie.domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain
-  // 判断缓存有没有当前域名
-  let isSameDomain = Object.keys(storaObj).indexOf(cookie.domain) >= 0
-    // 没有 对象添加新的属性数组对象
-    if(!isSameDomain){
-      storaObj[cookie.domain] = []
-    }
-    // 有 直接push
-    storaObj[cookie.domain].push({
-      setTime:Date.now()/1000,
-      storeType:storeType == 'local'?'local' : 'session',
-      ...cookie
-    })
-}
-
 /**
  * 接收到服务端下发的cookie
  * @param cookies
@@ -59,15 +42,32 @@ export function handleReceivedCookies(cookies?: Cookie[]) {
   }
 
   cookies.forEach((cookie,key)=>{
+    cookie.domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain
     // 存储
     if(cookie.maxAge >= 0){
-      cookiesObjFn(cookie,localCookiesObj,'local')
+      
+      // cookiesObjFn(cookie,localCookiesObj,'local')
+      if(key == 0){
+        localCookiesObj[cookie.domain] = []
+      }
+      localCookiesObj[cookie.domain].push({
+        setTime:Date.now()/1000,
+        storeType:'local',
+        ...cookie
+      })
       window.localStorage.setItem('cookiesObj',JSON.stringify(localCookiesObj))
       
     }else{
       
       if(cookie.maxAge == -1){
-        cookiesObjFn(cookie,sessionCookiesObj,'session')
+        if(key == 0){
+          sessionCookiesObj[cookie.domain] = []
+        }
+        sessionCookiesObj[cookie.domain].push({
+          setTime:Date.now()/1000,
+          storeType:'session',
+          ...cookie
+        })
          window.sessionStorage.setItem('cookiesObj',JSON.stringify(sessionCookiesObj))
       }
      
