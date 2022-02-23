@@ -42,7 +42,7 @@ export function addCookies(items?: Array<Cookie>) {
 
   for (let item of items) {
     // 根据最新规范，domain前的点号忽略，如：.a.com = a.com
-    const domain = item.domain.replace(/^\./, "");
+    const domain =  item.domain.replace(/^\./, "");
 
     const key = config.cacheKey + "." + domain;
     const { localValue, sessionValue } = getValuesByKey(key);
