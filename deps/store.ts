@@ -58,11 +58,6 @@ export function addCookiesByUrl(url: string, items?: Array<string>) {
     if (item.domain) {
       domain = item.domain.replace(/^\./, "");
     }
-<<<<<<< HEAD
-    // 根据最新规范，domain前的点号忽略，如：.a.com = a.com
-    const domain =  item.domain.replace(/^\./, "");
-=======
->>>>>>> 2c6fb25ba610f5217ed36fc602765ed1f1a4239f
 
     // 确保path值存在
     let path = "/";

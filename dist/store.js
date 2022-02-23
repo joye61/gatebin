@@ -25,7 +25,6 @@ export function addCookiesByUrl(url, items) {
         if (item.domain) {
             domain = item.domain.replace(/^\./, "");
         }
-        const domain = item.domain.replace(/^\./, "");
         let path = "/";
         if (item.path) {
             path = item.path;
