@@ -22,9 +22,9 @@ export default function App() {
       );
       const result = await resp.blobUrl();
       setSrc(result);
-      setTimeout(()=>{
+      setTimeout(() => {
         // resp.download()
-      }, 3000)
+      }, 3000);
     })();
   }, []);
 
