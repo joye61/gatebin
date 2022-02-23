@@ -115,27 +115,14 @@ func ProxyRequest(c echo.Context) error {
 	// 设置COOKIE
 	var cookies []*Cookie
 	for _, cookie := range resp.Cookies() {
-		var maxAge int
-		if cookie.MaxAge == 0 {
-			// maxAge不存在的场景
-			if cookie.RawExpires != "" {
-				// Expires不存在，session生命周期
-				maxAge = -1
-			} else {
-				// Expires存在，计算出差值
-				maxAge = int(time.Until(cookie.Expires).Seconds())
-			}
-		} else if cookie.MaxAge < 0 {
-			// 立即删除
-			maxAge = 0
-		}
 		cookies = append(cookies, &Cookie{
-			Name:   cookie.Name,
-			Value:  cookie.Value,
-			Path:   cookie.Path,
-			Domain: cookie.Domain,
-			MaxAge: int32(maxAge),
-			Raw:    cookie.Raw,
+			Name:    cookie.Name,
+			Value:   cookie.Value,
+			Path:    cookie.Path,
+			Domain:  cookie.Domain,
+			Expires: cookie.RawExpires,
+			MaxAge:  int32(cookie.MaxAge),
+			Raw:     cookie.Raw,
 		})
 	}
 	responseMessage.Cookies = cookies
@@ -166,6 +153,8 @@ func ProxyRequest(c echo.Context) error {
 
 	// 填充响应头中的内容长度
 	c.Response().Header().Set("Content-Length", strconv.FormatInt(int64(len(respData)), 10))
+	c.Response().Header().Set("Server", ServerName)
+
 	// 发送响应
 	return c.Blob(http.StatusOK, echo.MIMEApplicationProtobuf, respData)
 }

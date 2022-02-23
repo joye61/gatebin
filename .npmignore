@@ -1,7 +1,12 @@
+/.vscode/
+/bin/
 /deps/
-/test/
 /gateway/
+/node_modules/
+/test/
 /.gitignore
 /.npmignore
+/jsconfig.json
+/message.proto
 /package-lock.json
 /tsconfig.json

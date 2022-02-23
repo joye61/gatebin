@@ -1,7 +1,6 @@
 import { Cookie } from "./post";
 export interface CookieStoreItem extends Cookie {
     setTime: number;
-    storeType: "local" | "session";
 }
 export interface CookieStore {
     [key: string]: Array<CookieStoreItem>;
