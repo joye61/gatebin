@@ -29,6 +29,12 @@ export function addCookiesByUrl(url, items) {
         delete sessionValue[item.name];
         const startTime = Date.now() / 1000;
         const storeValue = Object.assign({ startTime }, item);
+        if (item.maxAge === undefined && item.expires) {
+            item.maxAge = (Date.parse(item.expires) - startTime) / 1000;
+        }
+        else if (item.maxAge === undefined && item.expires === undefined) {
+            item.maxAge = -1;
+        }
         if (item.maxAge > 0) {
             localValue[item.name] = storeValue;
         }

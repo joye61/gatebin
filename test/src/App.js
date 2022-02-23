@@ -10,7 +10,7 @@ gatewayConfig({
 async function test() {
   const resp = await post("https://clto.cc/YQ7FtSuk");
   const result = await resp.text();
-  console.log(result, 1111);
+  // console.log(result, 1111);
 }
 
 export default function App() {

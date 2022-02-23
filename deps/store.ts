@@ -62,6 +62,15 @@ export function addCookiesByUrl(url: string, items?: Array<Cookie>) {
       ...item,
     };
 
+    // 如果maxAge不存在，但是expires存在
+    if (item.maxAge === undefined && item.expires) {
+      item.maxAge = (Date.parse(item.expires) - startTime) / 1000;
+    }
+    // 如果maxAge和expires都不存在，认为是session
+    else if (item.maxAge === undefined && item.expires === undefined) {
+      item.maxAge = -1;
+    }
+
     // maxAge=0代表立即删除cookie，不做任何操作
     if (item.maxAge > 0) {
       localValue[item.name] = storeValue;
