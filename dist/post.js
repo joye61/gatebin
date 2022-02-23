@@ -9,7 +9,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import pbRoot from "./message";
 import zlib from "pako";
-import { buf2str, str2buf } from "./codec";
+import { buf2str } from "./convert";
 import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
@@ -201,13 +201,14 @@ export class GatewayResponse {
 }
 export function POST(url, option) {
     return __awaiter(this, void 0, void 0, function* () {
-        if (/^data\:(.+)?(;base64)?,/.test(url)) {
-            const buf = yield str2buf(url);
+        if (/^data\:(.+)?(;base64)?,/.test(url) || /^blob\:/.test(url)) {
+            const fetchRes = yield fetch(url);
+            const fetchBuf = yield fetchRes.arrayBuffer();
             const dataResult = {
                 code: 200,
                 headers: {},
                 cookies: [],
-                body: new Uint8Array(buf),
+                body: new Uint8Array(fetchBuf),
             };
             return new GatewayResponse(dataResult);
         }

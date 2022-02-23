@@ -1,6 +1,6 @@
 import pbRoot from "./message";
 import zlib from "pako";
-import { buf2str, str2buf } from "./codec";
+import { buf2str } from "./convert";
 import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
@@ -316,14 +316,16 @@ export async function POST(
   url: string,
   option?: PostOption
 ): Promise<IGatewayResponse> {
-  // 先判断URL是否是DataURL
-  if (/^data\:(.+)?(;base64)?,/.test(url)) {
-    const buf = await str2buf(url);
+  // 如果url是blobUrl或者DataUrl
+  // 直接将结果返回，免除编解码过程
+  if (/^data\:(.+)?(;base64)?,/.test(url) || /^blob\:/.test(url)) {
+    const fetchRes = await fetch(url);
+    const fetchBuf = await fetchRes.arrayBuffer();
     const dataResult: ResponseMessage = {
       code: 200,
       headers: {},
       cookies: [],
-      body: new Uint8Array(buf),
+      body: new Uint8Array(fetchBuf),
     };
     return new GatewayResponse(dataResult);
   }
