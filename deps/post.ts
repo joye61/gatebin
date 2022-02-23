@@ -1,5 +1,6 @@
 import pbRoot from "./message";
-import { buf2str } from "./codec";
+import zlib from "pako";
+import { buf2str, str2buf } from "./codec";
 import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
@@ -7,7 +8,6 @@ import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { type Namespace } from "protobufjs";
 import { addCookies, getCookiesByUrl } from "./store";
-import zlib from "pako";
 
 export interface PostOption {
   body?: XMLHttpRequestBodyInit | Record<string, string>;
@@ -85,11 +85,6 @@ async function createRequestMessage(
   url: string,
   option: PostOption
 ): Promise<RequestMessage> {
-  // 规范化路径，处理以//开始的路径
-  if (url.startsWith("//")) {
-    url = window.location.protocol + url;
-  }
-
   // 定义消息
   const message: RequestMessage = {
     url,
@@ -209,7 +204,7 @@ async function createRequestMessage(
     message.headers[CtypeName] = Ctypes.Text;
     rawBody.enabled = true;
     rawBody.type = 0;
-    rawBody.asPlain = String(option.body);
+    rawBody.asPlain = "";
   }
 
   // cookie相关逻辑
@@ -244,7 +239,7 @@ export class GatewayResponse implements IGatewayResponse {
    * @returns
    */
   async text(): Promise<string> {
-    return buf2str(this.body.buffer);
+    return buf2str(this.body);
   }
 
   /**
@@ -252,7 +247,7 @@ export class GatewayResponse implements IGatewayResponse {
    * @returns
    */
   async json(): Promise<Record<string, any>> {
-    const str = await buf2str(this.body.buffer);
+    const str = await this.text();
     return JSON.parse(str);
   }
 
@@ -285,6 +280,30 @@ export class GatewayResponse implements IGatewayResponse {
     const blob = await this.blob();
     return URL.createObjectURL(blob);
   }
+
+  /**
+   * 下载一个文件并且保存到本地
+   * @param name 主动设置的文件名
+   */
+  async download(name?: string) {
+    const url = await this.blobUrl();
+    const link = document.createElement("a");
+    let finalName = name ?? "download";
+    // 如果是下载文件，检测下载头
+    const disposition = this.headers["content-disposition"]?.value;
+    if (Array.isArray(disposition)) {
+      const regRes = disposition[0].match(/filename\=\"(.*?)\"/);
+      if (regRes?.[1]) {
+        name = regRes[1];
+      }
+    }
+    link.download = finalName;
+    link.href = url;
+    link.click();
+    window.setTimeout(() => {
+      link.remove();
+    }, 0);
+  }
 }
 
 /**
@@ -297,6 +316,23 @@ export async function POST(
   url: string,
   option?: PostOption
 ): Promise<IGatewayResponse> {
+  // 先判断URL是否是DataURL
+  if (/^data\:(.+)?(;base64)?,/.test(url)) {
+    const buf = await str2buf(url);
+    const dataResult: ResponseMessage = {
+      code: 200,
+      headers: {},
+      cookies: [],
+      body: new Uint8Array(buf),
+    };
+    return new GatewayResponse(dataResult);
+  }
+
+  // 规范化路径，处理以//开始的路径
+  if (url.startsWith("//")) {
+    url = window.location.protocol + url;
+  }
+
   // 获取配置
   const defaultOption: PostOption = {
     method: "GET",
@@ -331,9 +367,9 @@ export async function POST(
     throw new Error(`Gateway entry address cannot be empty`);
   }
 
-  // 如果设置启用压缩
   let finalBuffer: Uint8Array;
   if (option.compress) {
+    // 如果设置启用压缩
     const zlibBuffer = zlib.deflate(buffer);
     finalBuffer = new Uint8Array(1 + zlibBuffer.byteLength);
     finalBuffer.set(Uint8Array.of(1), 0);

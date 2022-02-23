@@ -52,6 +52,7 @@ export declare class GatewayResponse implements IGatewayResponse {
     blob(): Promise<Blob>;
     arrayBuffer(): Promise<ArrayBuffer>;
     blobUrl(): Promise<string>;
+    download(name?: string): Promise<void>;
 }
 export declare function POST(url: string, option?: PostOption): Promise<IGatewayResponse>;
 export {};

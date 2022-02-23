@@ -6,8 +6,6 @@ export interface GatewayConfig {
   debug?: boolean;
   // 网关入口，如果没有设置会报错
   entry?: string;
-  // 是否启用压缩
-  compress?: boolean;
   // cache存储的键前缀
   cacheKey?: string;
 }
@@ -15,7 +13,6 @@ export interface GatewayConfig {
 export const config: GatewayConfig = {
   debug: false,
   entry: "",
-  compress: false,
   cacheKey: "__bin_gateway",
 };
 

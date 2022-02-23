@@ -20,7 +20,7 @@ export function buf2str(buffer) {
             return blob.text();
         }
         else {
-            return yield new Promise((resolve) => {
+            return new Promise((resolve) => {
                 const reader = new FileReader();
                 reader.addEventListener("load", () => {
                     resolve(reader.result);
