@@ -8,7 +8,8 @@ gatewayConfig({
 });
 
 async function test() {
-  const resp = await post("https://clto.cc/YQ7FtSuk");
+  // const resp = await post("https://clto.cc/YQ7FtSuk");
+  const resp = await post("https://chelun.com");
   const result = await resp.text();
   // console.log(result, 1111);
 }
