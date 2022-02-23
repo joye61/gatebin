@@ -152,7 +152,6 @@ export class GatewayResponse {
     json() {
         return __awaiter(this, void 0, void 0, function* () {
             const str = yield this.text();
-            console.log(str, 'str');
             return JSON.parse(str);
         });
     }

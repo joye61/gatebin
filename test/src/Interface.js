@@ -1,38 +1,21 @@
 import { useEffect, useState } from "react";
 import post from "@";
-import { set } from "lodash";
 
-// async function InterfaceTest() {
-//   const resp = await post("https://map.baidu.com/search");
-//   const result = await resp.blobUrl();
-//   console.log(result, 1111);
-// }
+// async function testFn(props) {}
 
-export function InterfaceTest() {
-  const [src, setSrc] = useState("");
+export function InterfaceTest(props) {
+  console.log(props, "props");
 
   useEffect(() => {
     (async () => {
-      const resp = await post(
-        "https://mj.chelun.com/api/mini/order/list/init",
-        {
-          body: {
-            pageNo: 1,
-          },
-        }
-      );
-      const result = await resp.text();
+      const resp = await post(props.params.url, {
+        method: props.params.method || "GET",
+        body: props.params.body,
+      });
+      const result = await resp.json();
       console.log(result, "result");
-      if (result) {
-        set(result);
-      }
     })();
   }, []);
 
-  return (
-    <>
-      Interface
-      <a href={src} link={src}></a>
-    </>
-  );
+  return <>Interface</>;
 }

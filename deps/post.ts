@@ -248,7 +248,6 @@ export class GatewayResponse implements IGatewayResponse {
    */
   async json(): Promise<Record<string, any>> {
     const str = await this.text();
-    console.log(str,'str')
     return JSON.parse(str);
   }
 
