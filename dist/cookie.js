@@ -1,30 +1,33 @@
 let cookieCache = {};
-const cookiesObjFn = (cookie, storaObj) => {
+const cookiesObjFn = (cookie, storaObj, storeType) => {
+    cookie.domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain;
     let isSameDomain = Object.keys(storaObj).indexOf(cookie.domain) >= 0;
     if (!isSameDomain) {
         storaObj[cookie.domain] = [];
     }
-    storaObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000 }, cookie));
+    storaObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000, storeType: storeType == 'local' ? 'local' : 'session' }, cookie));
 };
 export function handleReceivedCookies(cookies) {
     if (!Array.isArray(cookies) || cookies.length === 0)
         return;
+    const localStorage = window.localStorage.getItem('cookiesObj');
+    const sessionStorage = window.sessionStorage.getItem('cookiesObj');
     let localCookiesObj = {};
     let sessionCookiesObj = {};
-    if (window.localStorage.getItem('cookiesObj')) {
-        localCookiesObj = JSON.parse(window.localStorage.getItem('cookiesObj')) || {};
+    if (localStorage) {
+        localCookiesObj = JSON.parse(localStorage) || {};
     }
-    if (window.sessionStorage.getItem('cookiesObj')) {
-        sessionCookiesObj = JSON.parse(window.sessionStorage.getItem('cookiesObj')) || {};
+    if (sessionStorage) {
+        sessionCookiesObj = JSON.parse(sessionStorage) || {};
     }
     cookies.forEach((cookie, key) => {
-        if (cookie.expires || cookie.maxAge >= 0) {
-            cookiesObjFn(cookie, localCookiesObj);
+        if (cookie.maxAge >= 0) {
+            cookiesObjFn(cookie, localCookiesObj, 'local');
             window.localStorage.setItem('cookiesObj', JSON.stringify(localCookiesObj));
         }
         else {
             if (cookie.maxAge == -1) {
-                cookiesObjFn(cookie, sessionCookiesObj);
+                cookiesObjFn(cookie, sessionCookiesObj, 'session');
                 window.sessionStorage.setItem('cookiesObj', JSON.stringify(sessionCookiesObj));
             }
         }
@@ -57,7 +60,6 @@ export function getWillSendCookies(url) {
     const expireIndex = [];
     const readList = [];
     const now = Date.now() / 1000;
-    cookies[0].maxAge = 0;
     for (let i = 0; i < cookies.length; i++) {
         const cookie = cookies[i];
         if (urlObj.pathname.startsWith(cookie.path)) {

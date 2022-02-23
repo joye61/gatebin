@@ -19,17 +19,20 @@ let cookieCache: CookieStore = {};
 // baidu.com
 // b.baidu.com
 // a.b.baidu.com
-const  cookiesObjFn = ( cookie: Cookie,storaObj: CookieStore)=>{
- 
 
+const  cookiesObjFn = ( cookie: Cookie,storaObj: CookieStore,storeType:string)=>{
+  // 域名开始 . 号切掉
+  cookie.domain = cookie.domain.startsWith('.') ? cookie.domain.substring(1) : cookie.domain
+  // 判断缓存有没有当前域名
   let isSameDomain = Object.keys(storaObj).indexOf(cookie.domain) >= 0
-  
+    // 没有 对象添加新的属性数组对象
     if(!isSameDomain){
       storaObj[cookie.domain] = []
     }
-
+    // 有 直接push
     storaObj[cookie.domain].push({
       setTime:Date.now()/1000,
+      storeType:storeType == 'local'?'local' : 'session',
       ...cookie
     })
 }
@@ -40,30 +43,31 @@ const  cookiesObjFn = ( cookie: Cookie,storaObj: CookieStore)=>{
  */
 export function handleReceivedCookies(cookies?: Cookie[]) {
   if (!Array.isArray(cookies) || cookies.length === 0) return;
+  // 获取缓存对象
+  const localStorage = window.localStorage.getItem('cookiesObj')
+  const sessionStorage = window.sessionStorage.getItem('cookiesObj')
 
   let localCookiesObj: CookieStore = {}
-
   let sessionCookiesObj: CookieStore = {}
 
-  if(window.localStorage.getItem('cookiesObj')){
-    localCookiesObj = JSON.parse(window.localStorage.getItem('cookiesObj') as string) || {}
+  if(localStorage){
+    localCookiesObj = JSON.parse(localStorage as string) || {}
   }
   
-  if(window.sessionStorage.getItem('cookiesObj')){
-    sessionCookiesObj = JSON.parse(window.sessionStorage.getItem('cookiesObj') as string) || {}
+  if(sessionStorage){
+    sessionCookiesObj = JSON.parse(sessionStorage as string) || {}
   }
 
   cookies.forEach((cookie,key)=>{
-    if(cookie.expires || cookie.maxAge>=0){
-
-      cookiesObjFn(cookie,localCookiesObj)
+    // 存储
+    if(cookie.maxAge >= 0){
+      cookiesObjFn(cookie,localCookiesObj,'local')
       window.localStorage.setItem('cookiesObj',JSON.stringify(localCookiesObj))
       
     }else{
       
       if(cookie.maxAge == -1){
-        cookiesObjFn(cookie,sessionCookiesObj)
-      
+        cookiesObjFn(cookie,sessionCookiesObj,'session')
          window.sessionStorage.setItem('cookiesObj',JSON.stringify(sessionCookiesObj))
       }
      
@@ -106,8 +110,6 @@ console.log(cookies,'cookies')
   const readList: number[] = [];
   const now = Date.now() / 1000;
 
-  cookies[0].maxAge = 0
-  // cookies[3].maxAge = -1
   for (let i = 0; i < cookies.length; i++) {
     const cookie = cookies[i];
     if (urlObj.pathname.startsWith(cookie.path)) {
