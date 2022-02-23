@@ -1,12 +1,4 @@
-import { useEffect, useState } from "react";
-import post, { gatewayConfig } from "@";
-
-gatewayConfig({
-  debug: true,
-  entry: "//10.10.33.70:9003/do",
-});
-
-async function test() {
+async function viewImg() {
   const resp = await post("https://map.baidu.com/search");
   const result = await resp.blobUrl();
   console.log(result, 1111);
@@ -32,6 +24,13 @@ export default function App() {
     <>
       hello world
       {src && <img src={src} width="600" />}
+      <button
+        onClick={() => {
+          test();
+        }}
+      >
+        获取图片
+      </button>
     </>
   );
 }
