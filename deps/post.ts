@@ -223,7 +223,7 @@ async function createRequestMessage(
 /**
  * 网关响应体消息的类型
  */
-export class GatewayResponse implements IGatewayResponse {
+export class GatewayResponse {
   code: number;
   body: Uint8Array;
   headers: Record<string, HeaderValue>;
@@ -315,7 +315,7 @@ export class GatewayResponse implements IGatewayResponse {
 export async function POST(
   url: string,
   option?: PostOption
-): Promise<IGatewayResponse> {
+): Promise<GatewayResponse> {
   // 请求地址不能为空
   if (!url) {
     throw new Error("The request url cannot be empty");
@@ -409,7 +409,7 @@ export async function POST(
   }
 
   // 处理接收到的信息
-  addCookiesByUrl(url, result.headers?.["set-cookie"].value);
+  addCookiesByUrl(url, result.headers?.["set-cookie"]?.value);
 
   // 读取响应类型
   return new GatewayResponse(result);

@@ -41,7 +41,7 @@ interface ResponseMessage {
     cookies: Cookie[];
     body: Uint8Array;
 }
-export declare class GatewayResponse implements IGatewayResponse {
+export declare class GatewayResponse {
     message: ResponseMessage;
     code: number;
     body: Uint8Array;
@@ -54,5 +54,5 @@ export declare class GatewayResponse implements IGatewayResponse {
     blobUrl(): Promise<string>;
     download(name?: string): Promise<void>;
 }
-export declare function POST(url: string, option?: PostOption): Promise<IGatewayResponse>;
+export declare function POST(url: string, option?: PostOption): Promise<GatewayResponse>;
 export {};

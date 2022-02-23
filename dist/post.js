@@ -200,7 +200,7 @@ export class GatewayResponse {
     }
 }
 export function POST(url, option) {
-    var _a;
+    var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
         if (!url) {
             throw new Error("The request url cannot be empty");
@@ -270,7 +270,7 @@ export function POST(url, option) {
         if (config.debug) {
             console.log("Response Message: \n\n", result, "\n\n");
         }
-        addCookiesByUrl(url, (_a = result.headers) === null || _a === void 0 ? void 0 : _a["set-cookie"].value);
+        addCookiesByUrl(url, (_b = (_a = result.headers) === null || _a === void 0 ? void 0 : _a["set-cookie"]) === null || _b === void 0 ? void 0 : _b.value);
         return new GatewayResponse(result);
     });
 }
