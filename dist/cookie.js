@@ -18,7 +18,7 @@ export function handleReceivedCookies(cookies) {
             if (key == 0) {
                 localCookiesObj[cookie.domain] = [];
             }
-            localCookiesObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000, storeType: 'local' }, cookie));
+            localCookiesObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000 }, cookie));
             window.localStorage.setItem('cookiesObj', JSON.stringify(localCookiesObj));
         }
         else {
@@ -26,7 +26,7 @@ export function handleReceivedCookies(cookies) {
                 if (key == 0) {
                     sessionCookiesObj[cookie.domain] = [];
                 }
-                sessionCookiesObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000, storeType: 'session' }, cookie));
+                sessionCookiesObj[cookie.domain].push(Object.assign({ setTime: Date.now() / 1000 }, cookie));
                 window.sessionStorage.setItem('cookiesObj', JSON.stringify(sessionCookiesObj));
             }
         }
@@ -91,6 +91,4 @@ export function getWillSendCookies(url) {
     else {
         return output;
     }
-    return "a=value; b=value";
-    return "";
 }

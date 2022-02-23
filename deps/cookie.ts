@@ -50,7 +50,7 @@ export function handleReceivedCookies(cookies?: Cookie[]) {
       }
       localCookiesObj[cookie.domain].push({
         setTime:Date.now()/1000,
-        storeType:'local',
+        // storeType:'local',
         ...cookie
       })
       window.localStorage.setItem('cookiesObj',JSON.stringify(localCookiesObj))
@@ -63,7 +63,7 @@ export function handleReceivedCookies(cookies?: Cookie[]) {
         }
         sessionCookiesObj[cookie.domain].push({
           setTime:Date.now()/1000,
-          storeType:'session',
+          // storeType:'session',
           ...cookie
         })
          window.sessionStorage.setItem('cookiesObj',JSON.stringify(sessionCookiesObj))
@@ -162,9 +162,4 @@ console.log(cookies,'cookies')
   }
   
 
-  //1、判断domain匹配
-  //2、判断path是否匹配
-  //3、判断过期
-  return "a=value; b=value";
-  return "";
 }
