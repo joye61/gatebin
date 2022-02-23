@@ -9,9 +9,8 @@ message Cookie {
   string value = 2;
   string path = 3;
   string domain = 4;
-  string expires = 5;
-  int32 maxAge = 6;
-  string raw = 7;
+  int32 maxAge = 5;
+  string raw = 6;
 }
 
 message File {

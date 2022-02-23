@@ -31,17 +31,13 @@
                             type: "string",
                             id: 4
                         },
-                        expires: {
-                            type: "string",
-                            id: 5
-                        },
                         maxAge: {
                             type: "int32",
-                            id: 6
+                            id: 5
                         },
                         raw: {
                             type: "string",
-                            id: 7
+                            id: 6
                         }
                     }
                 },

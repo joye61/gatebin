@@ -1,9 +1,12 @@
 import { Cookie } from "./post";
 
-interface CookieStoreItem extends Cookie {
+export interface CookieStoreItem extends Cookie {
+  // cookie的设置时间戳
   setTime: number;
+  // 存储方式
+  storeType: "local" | "session";
 }
-interface CookieStore {
+export interface CookieStore {
   [key: string]: Array<CookieStoreItem>;
 }
 
@@ -122,14 +125,14 @@ console.log(cookies,'cookies')
         }
       }
       // 判断是否过期 maxAge
-      else if (cookie.expires) {
-        const expireTime = Date.parse(cookie.expires) / 1000;
-        if (now > expireTime) {
-          expireIndex.push(i);
-        } else {
-          readList.push(i);
-        }
-      } 
+      // else if (cookie.expires) {
+      //   const expireTime = Date.parse(cookie.expires) / 1000;
+      //   if (now > expireTime) {
+      //     expireIndex.push(i);
+      //   } else {
+      //     readList.push(i);
+      //   }
+      // }
       // 如果maxAge和expire都不存在，是sessionCookie
       else {
         expireIndex.push(i);

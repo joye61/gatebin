@@ -1,11 +1,11 @@
 import isPlainObject from "lodash/isPlainObject";
 export const config = {
-    url: "//bin.chelun.com/do",
+    debug: false,
+    entry: "",
+    compress: false,
+    cacheKey: "__bin_gateway",
 };
-if (process.env.NODE_ENV !== "production") {
-    config.url = "//10.10.33.70:9003/do";
-}
-export function updateConfig(option) {
+export function gatewayConfig(option) {
     if (isPlainObject(option)) {
         for (let key in option) {
             if (config.hasOwnProperty(key)) {

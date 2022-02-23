@@ -57,7 +57,6 @@ export interface Cookie {
   value: string;
   path: string;
   domain: string;
-  expires: string;
   maxAge: number;
   raw: string;
 }
@@ -300,18 +299,32 @@ export async function POST(
   url: string,
   option?: PostOption
 ): Promise<IGatewayResponse> {
+
   // 创建消息
   const payload = await createRequestMessage(url, option);
+
+  if (config.debug) {
+    console.log(`Request Message: \n\n`, payload, "\n\n");
+  }
+
   const message = (pbRoot as Namespace).lookupType("main.RequestMessage");
   const verifyErr = message.verify(payload);
+
+  // 如果消息无法编码，报错
   if (verifyErr) {
     throw new Error(`Message verification failure: ${verifyErr}`);
   }
+
   const pbMessage = message.create(payload);
   const buffer = message.encode(pbMessage).finish();
 
-  // 发送请求到网关
-  const response = await fetch(config.url, {
+  // 如果网关地址没有配置，报错
+  if (!config.entry) {
+    throw new Error(`Gateway entry address cannot be empty`);
+  }
+
+  // 推送请求到网关
+  const response = await fetch(config.entry, {
     method: "POST",
     body: buffer,
   });
@@ -322,8 +335,8 @@ export async function POST(
   const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
   const result = respMessage.toObject(respPbMessage) as ResponseMessage;
 
-  if (process.env.NODE_ENV !== "production") {
-    console.log("Remote Response: \n\n", result, "\n\n");
+  if (config.debug) {
+    console.log("Response Message: \n\n", result, "\n\n");
   }
 
   // 处理接收到的信息

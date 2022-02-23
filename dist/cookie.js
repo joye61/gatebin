@@ -70,15 +70,6 @@ export function getWillSendCookies(url) {
                     readList.push(i);
                 }
             }
-            else if (cookie.expires) {
-                const expireTime = Date.parse(cookie.expires) / 1000;
-                if (now > expireTime) {
-                    expireIndex.push(i);
-                }
-                else {
-                    readList.push(i);
-                }
-            }
             else {
                 expireIndex.push(i);
             }

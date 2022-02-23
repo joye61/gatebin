@@ -27,7 +27,6 @@ export interface Cookie {
     value: string;
     path: string;
     domain: string;
-    expires: string;
     maxAge: number;
     raw: string;
 }
