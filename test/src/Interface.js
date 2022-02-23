@@ -14,10 +14,10 @@ export function InterfaceTest() {
   useEffect(() => {
     (async () => {
       const resp = await post(
-        "https://cljkt-h5.chelun.com/2021/dypush/indexNewCopyMultipleKs.html",
+        "https://mj.chelun.com/api/mini/order/list/init",
         {
           body: {
-            cs: "jkt_ksh5_tg01",
+            pageNo: 1,
           },
         }
       );
@@ -31,8 +31,8 @@ export function InterfaceTest() {
 
   return (
     <>
-      hello world
-      <a href={src}></a>
+      Interface
+      <a href={src} link={src}></a>
     </>
   );
 }

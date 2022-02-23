@@ -24,7 +24,7 @@ export default function App() {
     <>
       hello world
       {src && <img src={src} width="600" />}
-      <InterfaceTest />
+      {/* <InterfaceTest /> */}
     </>
   );
 }
