@@ -1,5 +1,10 @@
 import { useEffect } from "react";
-import post from "@";
+import post, { gatewayConfig } from "@";
+
+gatewayConfig({
+  debug: true,
+  entry: "//10.10.33.70:9003/do",
+});
 
 export default function App() {
   useEffect(() => {

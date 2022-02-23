@@ -188,6 +188,9 @@ export class GatewayResponse {
 export function POST(url, option) {
     return __awaiter(this, void 0, void 0, function* () {
         const payload = yield createRequestMessage(url, option);
+        if (config.debug) {
+            console.log(`Request Message: \n\n`, payload, "\n\n");
+        }
         const message = pbRoot.lookupType("main.RequestMessage");
         const verifyErr = message.verify(payload);
         if (verifyErr) {
@@ -195,7 +198,10 @@ export function POST(url, option) {
         }
         const pbMessage = message.create(payload);
         const buffer = message.encode(pbMessage).finish();
-        const response = yield fetch(config.url, {
+        if (!config.entry) {
+            throw new Error(`Gateway entry address cannot be empty`);
+        }
+        const response = yield fetch(config.entry, {
             method: "POST",
             body: buffer,
         });
@@ -203,8 +209,8 @@ export function POST(url, option) {
         const respMessage = pbRoot.lookupType("main.ResponseMessage");
         const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
         const result = respMessage.toObject(respPbMessage);
-        if (process.env.NODE_ENV !== "production") {
-            console.log("Remote Response: \n\n", result, "\n\n");
+        if (config.debug) {
+            console.log("Response Message: \n\n", result, "\n\n");
         }
         handleReceivedCookies(result.cookies);
         return new GatewayResponse(result);
