@@ -7,11 +7,14 @@ import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { type Namespace } from "protobufjs";
 import { addCookies, getCookiesByUrl } from "./store";
+import zlib from "pako";
 
 export interface PostOption {
   body?: XMLHttpRequestBodyInit | Record<string, string>;
   headers?: Record<string, string>;
   method?: string;
+  // 是否启用消息压缩，使用zlib压缩
+  compress?: boolean;
 }
 
 export interface FileItem {
@@ -80,21 +83,11 @@ interface ResponseMessage {
  */
 async function createRequestMessage(
   url: string,
-  option?: PostOption
+  option: PostOption
 ): Promise<RequestMessage> {
   // 规范化路径，处理以//开始的路径
   if (url.startsWith("//")) {
     url = window.location.protocol + url;
-  }
-
-  // 获取配置
-  const defaultOption: PostOption = {
-    method: "GET",
-  };
-  if (isPlainObject(option)) {
-    option = { ...defaultOption, ...option };
-  } else {
-    option = defaultOption;
   }
 
   // 定义消息
@@ -222,11 +215,11 @@ async function createRequestMessage(
   // cookie相关逻辑
   const cookies = getCookiesByUrl(url);
   if (cookies.length) {
-    let cookieStr = "";
+    let cookieArr: string[] = [];
     cookies.forEach((item) => {
-      cookieStr += `${item.name}=${item.value}; `;
+      cookieArr.push(`${item.name}=${item.value}`);
     });
-    message.headers["cookie"] = cookieStr.trimEnd();
+    message.headers["cookie"] = cookieArr.join("; ");
   }
 
   return message;
@@ -304,6 +297,17 @@ export async function POST(
   url: string,
   option?: PostOption
 ): Promise<IGatewayResponse> {
+  // 获取配置
+  const defaultOption: PostOption = {
+    method: "GET",
+    compress: true,
+  };
+  if (isPlainObject(option)) {
+    option = { ...defaultOption, ...option };
+  } else {
+    option = defaultOption;
+  }
+
   // 创建消息
   const payload = await createRequestMessage(url, option);
 
@@ -327,14 +331,32 @@ export async function POST(
     throw new Error(`Gateway entry address cannot be empty`);
   }
 
+  // 如果设置启用压缩
+  let finalBuffer: Uint8Array;
+  if (option.compress) {
+    const zlibBuffer = zlib.deflate(buffer);
+    finalBuffer = new Uint8Array(1 + zlibBuffer.byteLength);
+    finalBuffer.set(Uint8Array.of(1), 0);
+    finalBuffer.set(zlibBuffer, 1);
+  } else {
+    finalBuffer = new Uint8Array(1 + buffer.byteLength);
+    finalBuffer.set(Uint8Array.of(0), 0);
+    finalBuffer.set(buffer, 1);
+  }
+
   // 推送请求到网关
   const response = await fetch(config.entry, {
     method: "POST",
-    body: buffer,
+    body: finalBuffer,
   });
 
   // 接收网关响应
-  const protobuf = await response.arrayBuffer();
+  let responseBuf = await response.arrayBuffer();
+  let protobuf = new Uint8Array(responseBuf);
+  // 如果启用了压缩，则默认要先解压缩
+  if (option.compress) {
+    protobuf = zlib.inflate(protobuf);
+  }
   const respMessage = (pbRoot as Namespace).lookupType("main.ResponseMessage");
   const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
   const result = respMessage.toObject(respPbMessage) as ResponseMessage;

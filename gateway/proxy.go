@@ -19,14 +19,24 @@ import (
 
 /// 目前只允许GET和POST类型的代理请求
 func ProxyRequest(c echo.Context) error {
-
-	// 解码收到的数据
-	var requestMessage RequestMessage
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
 		return err
 	}
-	err = proto.Unmarshal(body, &requestMessage)
+
+	// 读取body的数据
+	compressOpen := body[0] == 1
+	pureBody := body[1:]
+	if compressOpen {
+		pureBody, err = DeCompress(bytes.NewBuffer(pureBody), "zlib")
+		if err != nil {
+			return err
+		}
+	}
+
+	// 解码收到的数据
+	var requestMessage RequestMessage
+	err = proto.Unmarshal(pureBody, &requestMessage)
 	if err != nil {
 		return err
 	}
@@ -149,6 +159,14 @@ func ProxyRequest(c echo.Context) error {
 	respData, err := proto.Marshal(responseMessage)
 	if err != nil {
 		return err
+	}
+
+	// 如果启用了压缩，则响应压缩之后的数据
+	if compressOpen {
+		respData, err = Compress(respData, "zlib")
+		if err != nil {
+			return err
+		}
 	}
 
 	// 填充响应头中的内容长度
