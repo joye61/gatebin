@@ -3,8 +3,6 @@ import { Cookie } from "./post";
 export interface CookieStoreItem extends Cookie {
   // cookie的设置时间戳
   setTime: number;
-  // 存储方式
-  storeType: "local" | "session";
 }
 export interface CookieStore {
   [key: string]: Array<CookieStoreItem>;

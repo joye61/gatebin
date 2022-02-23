@@ -1,5 +1,8 @@
 package main
 
+// 服务器明智
+var ServerName = "Bin Gateway"
+
 // 当前开发环境
 var Mode = "dev"
 

@@ -1,17 +1,76 @@
 import { config } from "./config";
-function storeCookie(item) {
-    const domain = item.domain.replace(/^\./, "");
-    const key = config.cacheKey + ":" + domain;
-    let cache = null;
-    let value = {};
-    if (item.storeType === "local") {
-        cache = window.localStorage.getItem(key);
+const localStore = window.localStorage;
+const sessionStore = window.sessionStorage;
+export function getValuesByKey(key) {
+    let localValue = {};
+    let sessionValue = {};
+    const localCache = localStore.getItem(key);
+    const sessionCache = sessionStore.getItem(key);
+    if (localCache) {
+        localValue = JSON.parse(localCache);
     }
-    else if (item.storeType === "session") {
-        cache = window.localStorage.getItem(key);
+    if (sessionCache) {
+        sessionValue = JSON.parse(sessionCache);
     }
-    if (cache && typeof cache === "string") {
-        value = JSON.parse(cache);
+    return { localValue, sessionValue };
+}
+export function addCookiesByUrl(url, items) {
+    const urlObj = new URL(url);
+    for (let item of items) {
+        const domain = item.domain.replace(/^\./, "");
+        if (!domain.endsWith(urlObj.hostname)) {
+            continue;
+        }
+        const key = config.cacheKey + ":" + domain;
+        const { localValue, sessionValue } = getValuesByKey(key);
+        delete localValue[item.name];
+        delete sessionValue[item.name];
+        const startTime = Date.now() / 1000;
+        const storeValue = Object.assign({ startTime }, item);
+        if (item.maxAge > 0) {
+            localValue[item.name] = storeValue;
+        }
+        else if (item.maxAge < 0) {
+            sessionValue[item.name] = storeValue;
+        }
+        localStore.setItem(key, JSON.stringify(localValue));
+        sessionStore.setItem(key, JSON.stringify(sessionValue));
     }
 }
-function getCookiesByDomain() { }
+export function getCookiesByUrl(url) {
+    const urlObj = new URL(url);
+    const parts = urlObj.hostname.split(".");
+    const checks = [];
+    let tmpDomain = parts[parts.length - 1];
+    for (let i = parts.length - 2; i >= 0; i--) {
+        tmpDomain = parts[i] + "." + tmpDomain;
+        checks.push(tmpDomain);
+    }
+    const output = [];
+    for (let domain of checks) {
+        const key = config.cacheKey + ":" + domain;
+        const { localValue, sessionValue } = getValuesByKey(key);
+        const names = Object.keys(localValue);
+        for (let name of names) {
+            const item = localValue[name];
+            if (item.maxAge <= 0 ||
+                Date.now() / 1000 >= item.startTime + item.maxAge) {
+                delete localValue[name];
+                continue;
+            }
+            if (!urlObj.pathname.startsWith(item.path)) {
+                continue;
+            }
+            output.push(item);
+        }
+        localStore.setItem(key, JSON.stringify(localValue));
+        for (let name in sessionValue) {
+            const item = sessionValue[name];
+            if (!urlObj.pathname.startsWith(item.path)) {
+                continue;
+            }
+            output.push(item);
+        }
+    }
+    return output;
+}
