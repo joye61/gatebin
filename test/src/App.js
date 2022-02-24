@@ -1,37 +1,43 @@
-import { useEffect, useState } from "react";
-import post, { gatewayConfig } from "@";
-import { InterfaceTest } from "./Interface";
-import { Login } from "./Login";
+import { GatewayConfig } from "@";
+import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
+import { Login } from "./pages/Login";
+import { Images } from "./pages/Images";
+import { Api } from "./pages/Api";
 
-gatewayConfig({
+GatewayConfig({
   debug: true,
   entry: "//10.10.33.70:9003/do",
 });
 
-async function test() {
-  // const resp = await post("https://clto.cc/YQ7FtSuk");
-  const resp = await post("https://chelun.com");
-  const result = await resp.text();
-  // console.log(result, 1111);
-}
-
 export default function App() {
-  const [src, setSrc] = useState("");
-
-  // useEffect(() => {
-  //   test();
-  // }, []);
-
   return (
-    <>
-      hello world
-      {src && <img src={src} width="600" />}
+    <Router>
       <div>
-        <InterfaceTest />
+        <nav>
+          <ul>
+            <li>
+              <Link to="/login">车轮登录测试</Link>
+            </li>
+            <li>
+              <Link to="/images">图片加载测试</Link>
+            </li>
+            <li>
+              <Link to="/api">接口请求测试</Link>
+            </li>
+          </ul>
+        </nav>
+        <Switch>
+          <Route path="/login">
+            <Login />
+          </Route>
+          <Route path="/images">
+            <Images />
+          </Route>
+          <Route path="/api">
+            <Api />
+          </Route>
+        </Switch>
       </div>
-      <div>
-        <Login />
-      </div>
-    </>
+    </Router>
   );
 }

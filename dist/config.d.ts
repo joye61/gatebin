@@ -5,4 +5,4 @@ export interface GatewayConfig {
     cacheKey?: string;
 }
 export declare const config: GatewayConfig;
-export declare function gatewayConfig(option: GatewayConfig): void;
+export declare function GatewayConfig(option: GatewayConfig): void;

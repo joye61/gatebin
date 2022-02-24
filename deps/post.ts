@@ -7,7 +7,7 @@ import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { type Namespace } from "protobufjs";
-import { addCookiesByUrl, getCookiesByUrl } from "./store";
+import { addCookiesByUrl, getCookiesByUrl } from "./cookie";
 
 export interface PostOption {
   body?: XMLHttpRequestBodyInit | Record<string, string>;
@@ -205,7 +205,9 @@ async function createRequestMessage(
 
   // body: ohters
   else {
-    message.headers[CtypeName] = Ctypes.Text;
+    if (userCtype) {
+      message.headers[CtypeName] = userCtype;
+    }
     rawBody.enabled = true;
     rawBody.type = 0;
     rawBody.asPlain = "";
@@ -394,7 +396,7 @@ export async function POST(
   // 推送请求到网关
   const response = await fetch(config.entry, {
     method: "POST",
-    body: finalBuffer,
+    body: finalBuffer
   });
 
   // 接收网关响应

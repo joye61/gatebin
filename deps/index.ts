@@ -1,2 +1,2 @@
 export { POST as default } from "./post";
-export { gatewayConfig } from "./config";
+export { GatewayConfig } from "./config";

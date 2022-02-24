@@ -3,8 +3,9 @@ export const config = {
     debug: false,
     entry: "",
     cacheKey: "__bin_gateway",
+    cookieInject: true,
 };
-export function gatewayConfig(option) {
+export function GatewayConfig(option) {
     if (isPlainObject(option)) {
         for (let key in option) {
             if (config.hasOwnProperty(key)) {

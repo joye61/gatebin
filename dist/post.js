@@ -15,7 +15,7 @@ import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
-import { addCookiesByUrl, getCookiesByUrl } from "./store";
+import { addCookiesByUrl, getCookiesByUrl } from "./cookie";
 function normalizeParams(input) {
     const output = {};
     if (isPlainObject(input)) {
@@ -122,7 +122,9 @@ function createRequestMessage(url, option) {
             rawBody.asBinary = new Uint8Array(option.body.buffer);
         }
         else {
-            message.headers[CtypeName] = Ctypes.Text;
+            if (userCtype) {
+                message.headers[CtypeName] = userCtype;
+            }
             rawBody.enabled = true;
             rawBody.type = 0;
             rawBody.asPlain = "";
@@ -258,7 +260,7 @@ export function POST(url, option) {
         }
         const response = yield fetch(config.entry, {
             method: "POST",
-            body: finalBuffer,
+            body: finalBuffer
         });
         let responseBuf = yield response.arrayBuffer();
         let protobuf = new Uint8Array(responseBuf);
