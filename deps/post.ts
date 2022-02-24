@@ -123,18 +123,22 @@ async function createRequestMessage(
 
   // body: FormData
   else if (option.body instanceof FormData) {
+   console.log(555)
     // FormData类型可能会包含文件上传
     message.headers[CtypeName] = Ctypes.FormData;
     const params: Record<string, string> = {};
     const files: Array<FileItem> = [];
     for (const [key, value] of option.body.entries()) {
+     
       if (value instanceof File) {
+     
         const buf = await value.arrayBuffer();
         files.push({
           key,
           name: value.name,
           data: new Uint8Array(buf),
         });
+        
       } else {
         params[key] = String(key);
       }

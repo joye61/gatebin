@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import post, { gatewayConfig } from "@";
 import { InterfaceTest } from "./Interface";
+import { Login } from "./Login";
 
 gatewayConfig({
   debug: true,
@@ -16,17 +17,7 @@ async function test() {
 
 export default function App() {
   const [src, setSrc] = useState("");
-  const [params, setparams] = useState({
-    url: "http://clsp-api.carlink716.com/Common/GetFields",
-  });
 
-  async function InterfaceTestFn() {
-    setparams({
-      url: "http://clsp-api.carlink716.com/Common/GetFields",
-      method: "",
-      body: {},
-    });
-  }
   // useEffect(() => {
   //   test();
   // }, []);
@@ -36,10 +27,10 @@ export default function App() {
       hello world
       {src && <img src={src} width="600" />}
       <div>
-        <InterfaceTest params={params} />
-        <button onClick={InterfaceTestFn} style={{ marginLeft: "30px" }}>
-          接口测试
-        </button>
+        <InterfaceTest />
+      </div>
+      <div>
+        <Login />
       </div>
     </>
   );
