@@ -16,7 +16,7 @@ export default function App() {
         <nav>
           <ul>
             <li>
-              <Link to="/login">车轮登录测试</Link>
+              <Link to="/login">登录测试</Link>
             </li>
             <li>
               <Link to="/images">图片加载测试</Link>

@@ -14,7 +14,6 @@ export const config: GatewayConfig = {
   debug: false,
   entry: "",
   cacheKey: "__bin_gateway",
-  cookieInject: true,
 };
 
 /**
