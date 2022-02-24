@@ -30,57 +30,64 @@ import post from "@";
 //         credentials: "include",
 
 // 获取图形验证码
-export function Login() {
+export function LoginT() {
   let [src, setSrc] = useState("");
   let [phone, setPhone] = useState(null);
   let [imageVerify, setImageVerify] = useState(null);
+  let [ImageVerifyData, setImageVerifyData] = useState(null);
+
   let [verify, setVerify] = useState(null);
 
-  // 获取图形验证码
-  async function makeImageVerify() {
-    const resp = await post(
-      `http://clsp-admin-test.carlink716.com/SupplierAdmin/Login/MakeImageVerify?${Date.now().toString(
-        16
-      )}`,
-      {
-        method: "GET",
-      }
-    );
-    // 获取图形验证码 转url
-    const result = await resp.blobUrl();
-    setSrc(result);
-    console.log(result, "result");
-  }
   // 获取短信验证码
   async function getVerify() {
     const resp = await post(
-      `http://clsp-admin-test.carlink716.com/SupplierAdmin/Login/GetVerify?phone=${phone}&image_code=${imageVerify}`,
+      `https://passport-test.chelun.com/api_v2/get_sms_captcha?os=h5`,
       {
-        method: "GET",
+        method: "POST",
         body: {
-          // phone: phone,
+          phone: phone,
           // image_code: imageVerify,
         },
       }
     );
 
     const result = await resp.json();
-    console.log(result, "result");
+    if (result.code === 15001) {
+      // let data = result.data;
+      setImageVerifyData(result.data);
+      const res = await post(result.data.captcha_url);
+      let url = await res.blobUrl();
+      console.log(url);
+      setSrc(url);
+    }
   }
-  // 验证码登录
-  async function login() {
+
+  // 图形验证码保存
+  async function imageVerifySave() {
     const resp = await post(
-      `http://clsp-admin-test.carlink716.com/SupplierAdmin/Login/Login`,
+      `https://passport-test.chelun.com/api_v2/get_sms_captcha?os=h5`,
       {
         method: "POST",
         body: {
           phone: phone,
-          verify: verify,
-          // mobile: "15952171111",
-          // open_id: "o8-IA5PYljga7tGGExoCUUHKt9oo",
-          // password: "2ae95839277cd8a072901a4339bd35d3",
+          verify_code: imageVerify,
+          api_ticket: ImageVerifyData.api_ticket,
         },
-        credentials: "include",
+      }
+    );
+    let result = await resp.json();
+  }
+
+  // 验证码登录
+  async function login() {
+    const resp = await post(
+      `https://passport-test.chelun.com/api_v2/login_with_captcha?os=h5`,
+      {
+        method: "POST",
+        body: {
+          phone: phone,
+          captcha: verify,
+        },
       }
     );
     const result = await resp.json();
@@ -90,7 +97,7 @@ export function Login() {
   // 退出登录
   async function loginOut() {
     const resp = await post(
-      `http://clsp-admin-test.carlink716.com/SupplierAdmin/Login/LoginOut`,
+      `https://passport-test.chelun.com/api_v2/logout?os=h5`,
       {
         method: "POST",
         body: {},
@@ -104,29 +111,45 @@ export function Login() {
 
   return (
     <>
-      <div style={{ marginTop: "30px" }}>
-        <button onClick={makeImageVerify}>获取图形验证码</button>
-        <img src={src}></img>
-      </div>
-
-      <div style={{ marginTop: "30px" }}>
+      <div style={{ marginTop: "10px" }}>
         手机号
         <input
           onChange={(e) => {
             setPhone(e.target.value);
           }}
         ></input>
-        图形验证码
-        <input
-          onChange={(e) => {
-            setImageVerify(e.target.value);
-          }}
-        ></input>
-        <button onClick={getVerify} style={{ marginLeft: "30px" }}>
+        <button onClick={getVerify} style={{ marginLeft: "10px" }}>
           获取短信验证码
         </button>
+        <img src={src} style={{ marginLeft: "10px" }} width={100}></img>
       </div>
-      <div>
+      <div style={{ marginTop: "10px" }}>
+        {src && (
+          <>
+            图形验证码
+            <input
+              onChange={(e) => {
+                setImageVerify(e.target.value);
+              }}
+            ></input>
+            <button
+              onClick={async () => {
+                const res = await post(ImageVerifyData.captcha_url);
+                let url = await res.blobUrl();
+                setSrc(url);
+              }}
+              style={{ marginLeft: "10px" }}
+            >
+              更换
+            </button>
+            <button onClick={imageVerifySave} style={{ marginLeft: "10px" }}>
+              确定
+            </button>
+          </>
+        )}
+      </div>
+
+      <div style={{ marginTop: "10px" }}>
         手机号
         <input
           onChange={(e) => {
@@ -139,11 +162,11 @@ export function Login() {
             setVerify(e.target.value);
           }}
         ></input>
-        <button onClick={login} style={{ marginLeft: "30px" }}>
+        <button onClick={login} style={{ marginLeft: "10px" }}>
           登录测试
         </button>
       </div>
-      <div style={{ marginTop: "30px" }}>
+      <div style={{ marginTop: "10px" }}>
         <button onClick={loginOut}>退出登录测试</button>
       </div>
     </>
