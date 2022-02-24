@@ -201,7 +201,9 @@ async function createRequestMessage(
 
   // body: ohters
   else {
-    message.headers[CtypeName] = Ctypes.Text;
+    if (userCtype) {
+      message.headers[CtypeName] = userCtype;
+    }
     rawBody.enabled = true;
     rawBody.type = 0;
     rawBody.asPlain = "";
@@ -390,8 +392,7 @@ export async function POST(
   // 推送请求到网关
   const response = await fetch(config.entry, {
     method: "POST",
-    body: finalBuffer,
-    credentials: "include"
+    body: finalBuffer
   });
 
   // 接收网关响应

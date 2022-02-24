@@ -21,6 +21,7 @@ import (
 func ProxyRequest(c echo.Context) error {
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
+		LogError(c, 1, err)
 		return err
 	}
 
@@ -30,6 +31,7 @@ func ProxyRequest(c echo.Context) error {
 	if compressOpen {
 		pureBody, err = DeCompress(bytes.NewBuffer(pureBody), "zlib")
 		if err != nil {
+			LogError(c, 2, err)
 			return err
 		}
 	}
@@ -38,6 +40,7 @@ func ProxyRequest(c echo.Context) error {
 	var requestMessage RequestMessage
 	err = proto.Unmarshal(pureBody, &requestMessage)
 	if err != nil {
+		LogError(c, 3, err)
 		return err
 	}
 
@@ -65,6 +68,7 @@ func ProxyRequest(c echo.Context) error {
 		ctype := headers.Get("Content-Type")
 		mtype, _, err := mime.ParseMediaType(ctype)
 		if err != nil {
+			LogError(c, 4, err)
 			return err
 		}
 		switch mtype {
@@ -107,6 +111,7 @@ func ProxyRequest(c echo.Context) error {
 		sendBody,
 	)
 	if err != nil {
+		LogError(c, 5, err)
 		return err
 	}
 	// 更新请求头
@@ -114,6 +119,7 @@ func ProxyRequest(c echo.Context) error {
 	// 发送请求
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
+		LogError(c, 6, err)
 		return err
 	}
 
@@ -121,22 +127,6 @@ func ProxyRequest(c echo.Context) error {
 	var responseMessage = &ResponseMessage{
 		Code: uint32(resp.StatusCode),
 	}
-
-	// 设置COOKIE
-	// var cookies []*Cookie
-	// for _, cookie := range resp.Cookies() {
-	// 	cookies = append(cookies, &Cookie{
-	// 		Name:    cookie.Name,
-	// 		Value:   cookie.Value,
-	// 		Path:    cookie.Path,
-	// 		Domain:  cookie.Domain,
-	// 		Expires: cookie.RawExpires,
-	// 		MaxAge:  int32(cookie.MaxAge),
-	// 		Raw:     cookie.Raw,
-	// 	})
-	// }
-	// responseMessage.Cookies = cookies
-	// resp.Header.Del("Set-Cookie")
 
 	// 设置头部
 	respHeaders := map[string]*HeaderValue{}
@@ -151,6 +141,7 @@ func ProxyRequest(c echo.Context) error {
 	compress := resp.Header.Get("Content-Encoding")
 	respBody, err := DeCompress(resp.Body, compress)
 	if err != nil {
+		LogError(c, 7, err)
 		return err
 	}
 	responseMessage.Body = respBody
@@ -158,6 +149,7 @@ func ProxyRequest(c echo.Context) error {
 	// 响应消息进行编码
 	respData, err := proto.Marshal(responseMessage)
 	if err != nil {
+		LogError(c, 8, err)
 		return err
 	}
 
@@ -165,6 +157,7 @@ func ProxyRequest(c echo.Context) error {
 	if compressOpen {
 		respData, err = Compress(respData, "zlib")
 		if err != nil {
+			LogError(c, 9, err)
 			return err
 		}
 	}

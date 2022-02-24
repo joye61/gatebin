@@ -8,6 +8,8 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type Any = interface{}
+
 func main() {
 	e := echo.New()
 	e.HideBanner = true
