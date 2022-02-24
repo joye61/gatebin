@@ -7,7 +7,7 @@ import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { type Namespace } from "protobufjs";
-import { addCookiesByUrl, getCookiesByUrl } from "./store";
+import { addCookiesByUrl, getCookiesByUrl } from "./cookie";
 
 export interface PostOption {
   body?: XMLHttpRequestBodyInit | Record<string, string>;
@@ -391,6 +391,7 @@ export async function POST(
   const response = await fetch(config.entry, {
     method: "POST",
     body: finalBuffer,
+    credentials: "include"
   });
 
   // 接收网关响应

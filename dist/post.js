@@ -15,7 +15,7 @@ import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
-import { addCookiesByUrl, getCookiesByUrl } from "./store";
+import { addCookiesByUrl, getCookiesByUrl } from "./cookie";
 function normalizeParams(input) {
     const output = {};
     if (isPlainObject(input)) {
@@ -258,6 +258,7 @@ export function POST(url, option) {
         const response = yield fetch(config.entry, {
             method: "POST",
             body: finalBuffer,
+            credentials: "include"
         });
         let responseBuf = yield response.arrayBuffer();
         let protobuf = new Uint8Array(responseBuf);

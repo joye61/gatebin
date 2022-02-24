@@ -14,13 +14,14 @@ export const config: GatewayConfig = {
   debug: false,
   entry: "",
   cacheKey: "__bin_gateway",
+  cookieInject: true,
 };
 
 /**
  * 更新网关配置
  * @param option
  */
-export function gatewayConfig(option: GatewayConfig) {
+export function GatewayConfig(option: GatewayConfig) {
   if (isPlainObject(option)) {
     for (let key in option) {
       if (config.hasOwnProperty(key)) {

@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
-import post, { gatewayConfig } from "@";
+import post, { GatewayConfig } from "@";
 
-gatewayConfig({
+GatewayConfig({
   debug: true,
   entry: "//10.10.33.70:9003/do",
 });
 
 async function test() {
-  // const resp = await post("https://clto.cc/YQ7FtSuk");
-  const resp = await post("https://chelun.com");
+  const resp = await post("https://clto.cc/YQ7FtSuk");
+  // const resp = await post("https://chelun.com");
   const result = await resp.text();
   // console.log(result, 1111);
 }

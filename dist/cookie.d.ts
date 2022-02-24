@@ -1,9 +1,14 @@
-import { Cookie } from "./post";
-export interface CookieStoreItem extends Cookie {
-    setTime: number;
+export interface Cookie {
+    name: string;
+    value: string;
+    path: string;
+    domain: string;
+    maxAge: number;
+    startTime: number;
 }
-export interface CookieStore {
-    [key: string]: Array<CookieStoreItem>;
-}
-export declare function handleReceivedCookies(cookies?: Cookie[]): void;
-export declare function getWillSendCookies(url: string): string;
+export declare function getValuesByKey(key: string): {
+    localValue: Record<string, Cookie>;
+    sessionValue: Record<string, Cookie>;
+};
+export declare function addCookiesByUrl(url: string, items?: Array<string>): void;
+export declare function getCookiesByUrl(url: string): Cookie[];
