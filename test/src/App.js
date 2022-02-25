@@ -5,6 +5,7 @@ import { Images } from "./pages/Images";
 import { Api } from "./pages/Api";
 
 import { LoginT } from "./LoginT";
+import { InterfaceTest } from "./Interface";
 GatewayConfig({
   debug: true,
   entry: "//10.10.33.70:9003/do",
@@ -41,7 +42,9 @@ export default function App() {
           </Switch>
         </div>
       </Router>
-      <LoginT />
+      {!window.localStorage.getItem("ac_token") && <LoginT />}
+      <div style={{ marginTop: "20px" }}></div>
+      {window.localStorage.getItem("ac_token") && <InterfaceTest />}
     </>
   );
 }

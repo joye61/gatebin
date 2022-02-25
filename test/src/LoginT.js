@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import post from "@";
+import { setTextRange } from "typescript";
 
 // async function testFn(props) {}
 // 参考大巨会供应商端
@@ -37,6 +38,7 @@ export function LoginT() {
   let [ImageVerifyData, setImageVerifyData] = useState(null);
 
   let [verify, setVerify] = useState(null);
+  let [text, setText] = useState(null);
 
   // 获取短信验证码
   async function getVerify() {
@@ -76,6 +78,12 @@ export function LoginT() {
       }
     );
     let result = await resp.json();
+    if (result.code == 1) {
+      setText("已发送");
+    } else {
+      setText(result.msg);
+    }
+    console.log(result, "短信验证码");
   }
 
   // 验证码登录
@@ -91,19 +99,10 @@ export function LoginT() {
       }
     );
     const result = await resp.json();
-    console.log(result, "result");
-  }
+    if (result.code == 1) {
+      window.localStorage.setItem("ac_token", JSON.stringify(result.data));
+    }
 
-  // 退出登录
-  async function loginOut() {
-    const resp = await post(
-      `https://passport-test.chelun.com/api_v2/logout?os=h5`,
-      {
-        method: "POST",
-        body: {},
-      }
-    );
-    const result = await resp.json();
     console.log(result, "result");
   }
 
@@ -145,17 +144,12 @@ export function LoginT() {
             <button onClick={imageVerifySave} style={{ marginLeft: "10px" }}>
               确定
             </button>
+            <span>{text}</span>
           </>
         )}
       </div>
 
       <div style={{ marginTop: "10px" }}>
-        手机号
-        <input
-          onChange={(e) => {
-            setPhone(e.target.value);
-          }}
-        ></input>
         短信验证码
         <input
           onChange={(e) => {
@@ -165,9 +159,6 @@ export function LoginT() {
         <button onClick={login} style={{ marginLeft: "10px" }}>
           登录测试
         </button>
-      </div>
-      <div style={{ marginTop: "10px" }}>
-        <button onClick={loginOut}>退出登录测试</button>
       </div>
     </>
   );
