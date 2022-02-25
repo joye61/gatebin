@@ -58,6 +58,7 @@ function createRequestMessage(url, option) {
             message.params = params;
         }
         else if (option.body instanceof FormData) {
+            console.log(555);
             message.headers[CtypeName] = Ctypes.FormData;
             const params = {};
             const files = [];
