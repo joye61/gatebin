@@ -233,7 +233,7 @@ export class GatewayResponse {
 let DebugMessageId = 0;
 function getFormatMessageHeader(id, type) {
     return [
-        `%c${type} Message ID: %c[${id}]`,
+        `%c${type} Message: %c[${id}]`,
         "background-color:blue;color:#fff;padding:5px 0 5px 10px",
         "background-color:blue;color:red;padding:5px 10px 5px 0;font-weight:bold",
     ];
