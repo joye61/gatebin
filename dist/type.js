@@ -4,6 +4,6 @@ export var Ctypes;
     Ctypes["Json"] = "application/json";
     Ctypes["FormData"] = "multipart/form-data";
     Ctypes["UrlEncoded"] = "application/x-www-form-urlencoded";
-    Ctypes["Text"] = "text/plain";
+    Ctypes["Plain"] = "text/plain";
 })(Ctypes || (Ctypes = {}));
 export const CtypeName = "content-type";

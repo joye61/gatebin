@@ -92,7 +92,7 @@ function createRequestMessage(url, option) {
                     });
                 }
                 else {
-                    params[key] = String(key);
+                    params[key] = value;
                 }
             }
             if (files.length) {
@@ -118,7 +118,7 @@ function createRequestMessage(url, option) {
             }
         }
         else if (typeof option.body === "string") {
-            message.headers[CtypeName] = Ctypes.Text;
+            message.headers[CtypeName] = Ctypes.Plain;
             rawBody.enabled = true;
             rawBody.type = 0;
             rawBody.asPlain = option.body;
@@ -150,6 +150,9 @@ function createRequestMessage(url, option) {
         else {
             if (userCtype) {
                 message.headers[CtypeName] = userCtype;
+            }
+            else {
+                message.headers[CtypeName] = Ctypes.Plain;
             }
             rawBody.enabled = true;
             rawBody.type = 0;
@@ -229,7 +232,7 @@ export class GatewayResponse {
     }
 }
 export function POST(url, option) {
-    var _a, _b;
+    var _a, _b, _c, _d, _e;
     return __awaiter(this, void 0, void 0, function* () {
         if (!url) {
             throw new Error("The request url cannot be empty");
@@ -259,7 +262,7 @@ export function POST(url, option) {
         }
         const payload = yield createRequestMessage(url, option);
         if (config.debug) {
-            console.log(`Request Message: \n\n`, payload, "\n\n");
+            console.log("%cRequest Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", payload, "\n\n");
         }
         const message = pbRoot.lookupType("main.RequestMessage");
         const verifyErr = message.verify(payload);
@@ -296,9 +299,21 @@ export function POST(url, option) {
         const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
         const result = respMessage.toObject(respPbMessage);
         if (config.debug) {
-            console.log("Response Message: \n\n", result, "\n\n");
+            const debugResult = result;
+            const resTypeRaw = (_c = (_b = (_a = result.headers[CtypeName]) === null || _a === void 0 ? void 0 : _a.value) === null || _b === void 0 ? void 0 : _b[0]) !== null && _c !== void 0 ? _c : "";
+            const { type } = typeParse.parse(resTypeRaw);
+            if (type === Ctypes.Json) {
+                const text = yield buf2str(result.body);
+                try {
+                    debugResult.bodyAsJson = JSON.parse(text);
+                }
+                catch (error) {
+                    debugResult.bodyAsJson = error.message;
+                }
+            }
+            console.log("%cResponse Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", debugResult, "\n\n");
         }
-        addCookiesByUrl(url, (_b = (_a = result.headers) === null || _a === void 0 ? void 0 : _a["set-cookie"]) === null || _b === void 0 ? void 0 : _b.value);
+        addCookiesByUrl(url, (_e = (_d = result.headers) === null || _d === void 0 ? void 0 : _d["set-cookie"]) === null || _e === void 0 ? void 0 : _e.value);
         return new GatewayResponse(result);
     });
 }

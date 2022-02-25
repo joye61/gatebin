@@ -40,6 +40,18 @@ export interface RequestMessage {
   rawBody: RawBody;
   files: FileItem[];
 }
+interface HeaderValue {
+  value: string[];
+}
+interface ResponseMessage {
+  code: number;
+  headers: Record<string, HeaderValue>;
+  body: Uint8Array;
+}
+
+interface DebugResponseMessage extends ResponseMessage {
+  bodyAsJson?: any;
+}
 
 /**
  * 规范化参数格式，参数在网络上传输只能是字符串
@@ -53,14 +65,6 @@ function normalizeParams(input: Record<string, any>): Record<string, string> {
     }
   }
   return output;
-}
-interface HeaderValue {
-  value: string[];
-}
-interface ResponseMessage {
-  code: number;
-  headers: Record<string, HeaderValue>;
-  body: Uint8Array;
 }
 
 /**
@@ -152,7 +156,7 @@ async function createRequestMessage(
           data: new Uint8Array(buf),
         });
       } else {
-        params[key] = String(key);
+        params[key] = value;
       }
     }
 
@@ -181,7 +185,7 @@ async function createRequestMessage(
   // body: string
   else if (typeof option.body === "string") {
     // 字符串类型
-    message.headers[CtypeName] = Ctypes.Text;
+    message.headers[CtypeName] = Ctypes.Plain;
     rawBody.enabled = true;
     rawBody.type = 0;
     rawBody.asPlain = option.body;
@@ -219,10 +223,12 @@ async function createRequestMessage(
     rawBody.asBinary = new Uint8Array(option.body!.buffer as Uint8Array);
   }
 
-  // body: ohters
+  // body: 其他类型都当做纯文本原始类型处理
   else {
     if (userCtype) {
       message.headers[CtypeName] = userCtype;
+    } else {
+      message.headers[CtypeName] = Ctypes.Plain;
     }
     rawBody.enabled = true;
     rawBody.type = 0;
@@ -376,7 +382,13 @@ export async function POST(
   const payload = await createRequestMessage(url, option);
 
   if (config.debug) {
-    console.log(`Request Message: \n\n`, payload, "\n\n");
+    console.log(
+      "%cRequest Message",
+      "background-color:blue;color:#fff;padding:1px 5px",
+      "\n\n",
+      payload,
+      "\n\n"
+    );
   }
 
   const message = (pbRoot as Namespace).lookupType("main.RequestMessage");
@@ -425,8 +437,27 @@ export async function POST(
   const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
   const result = respMessage.toObject(respPbMessage) as ResponseMessage;
 
+  // debug模式显示调试信息
   if (config.debug) {
-    console.log("Response Message: \n\n", result, "\n\n");
+    const debugResult: DebugResponseMessage = result;
+    const resTypeRaw = result.headers[CtypeName]?.value?.[0] ?? "";
+    const { type } = typeParse.parse(resTypeRaw);
+    // 如果响应是JSON类型，返回解析后的对象
+    if (type === Ctypes.Json) {
+      const text = await buf2str(result.body);
+      try {
+        debugResult.bodyAsJson = JSON.parse(text);
+      } catch (error) {
+        debugResult.bodyAsJson = (<SyntaxError>error).message;
+      }
+    }
+    console.log(
+      "%cResponse Message",
+      "background-color:blue;color:#fff;padding:1px 5px",
+      "\n\n",
+      debugResult,
+      "\n\n"
+    );
   }
 
   // 处理接收到的信息
