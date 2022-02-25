@@ -231,6 +231,14 @@ export class GatewayResponse {
         });
     }
 }
+let DebugMessageId = 0;
+function getFormatMessageHeader(id, type) {
+    return [
+        `%c${type} Message ID: %c[${id}]`,
+        "background-color:blue;color:#fff;padding:5px 0 5px 10px",
+        "background-color:blue;color:red;padding:5px 10px 5px 0;font-weight:bold",
+    ];
+}
 export function POST(url, option) {
     var _a, _b, _c, _d, _e;
     return __awaiter(this, void 0, void 0, function* () {
@@ -261,8 +269,9 @@ export function POST(url, option) {
             option = defaultOption;
         }
         const payload = yield createRequestMessage(url, option);
+        DebugMessageId += 1;
         if (config.debug) {
-            console.log("  %cRequest Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", payload, "\n\n");
+            console.log(...getFormatMessageHeader(DebugMessageId, "Request"), "\n\n", payload, "\n\n");
         }
         const message = pbRoot.lookupType("main.RequestMessage");
         const verifyErr = message.verify(payload);
@@ -311,7 +320,18 @@ export function POST(url, option) {
                     debugResult.bodyAsJson = error.message;
                 }
             }
-            console.log("  %cResponse Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", debugResult, "\n\n");
+            const checks = [
+                Ctypes.Ajs,
+                Ctypes.Js,
+                Ctypes.Css,
+                Ctypes.Html,
+                Ctypes.Plain,
+            ];
+            if (checks.includes(type)) {
+                const text = yield buf2str(result.body);
+                debugResult.bodyAsText = text;
+            }
+            console.log(...getFormatMessageHeader(DebugMessageId, "Response"), "\n\n", debugResult, "\n\n");
         }
         addCookiesByUrl(url, (_e = (_d = result.headers) === null || _d === void 0 ? void 0 : _d["set-cookie"]) === null || _e === void 0 ? void 0 : _e.value);
         return new GatewayResponse(result);
