@@ -11,9 +11,5 @@ var Port uint64 = 9003
 
 // 允许的域名
 var AllowHosts = []string{
-	"chelun.com",
-	"eclicks.cn",
-	"carlink716.com",
-	"1eplus.com",
-	"xjzhixuan.com",
+	// "example.com",
 }

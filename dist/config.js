@@ -3,7 +3,6 @@ export const config = {
     debug: false,
     entry: "",
     cacheKey: "__bin_gateway",
-    cookieInject: true,
 };
 export function GatewayConfig(option) {
     if (isPlainObject(option)) {
