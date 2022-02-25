@@ -27,7 +27,7 @@ export function InterfaceTest() {
 
   // fileUpload
   async function fileUpload() {
-    const resp = await post(`https://upload-test.chelun.com/upload`, {
+    const resp = await post(`https://file.chelun.com/upload`, {
       method: "POST",
       body: file,
       compress: true,
@@ -39,13 +39,10 @@ export function InterfaceTest() {
 
   // 退出登录
   async function loginOut() {
-    const resp = await post(
-      `https://passport-test.chelun.com/api_v2/logout?os=h5`,
-      {
-        method: "POST",
-        body: {},
-      }
-    );
+    const resp = await post(`https://passport.chelun.com/api_v2/logout?os=h5`, {
+      method: "POST",
+      body: {},
+    });
     const result = await resp.json();
     if (result.code == 1) {
       window.localStorage.removeItem("ac_token");
@@ -66,15 +63,17 @@ export function InterfaceTest() {
       </div>
 
       {/* 文件上传 */}
+
       <input
+        name="file"
         type="file"
         onChange={(event) => {
           console.log(event.target.files[0], "event.target.files[0]");
           let data = {
-            token:
-              "eyJmdHlwZSI6NDAsInVzZXJfaWQiOjEsImFjY2Vzc19rZXkiOiJjaGV6aHUuZWNsaWNrcy5jbjE0NzY5NTUwMjY0NDE2IiwiZGVhZGxpbmUiOjE2NDU3NTkxMDB9:NaTCCIj-hr2l8j-aKbfrXi0pJvE",
+            // token:
+            //   "eyJmdHlwZSI6NDAsInVzZXJfaWQiOjEsImFjY2Vzc19rZXkiOiJjaGV6aHUuZWNsaWNrcy5jbjE0NzY5NTUwMjY0NDE2IiwiZGVhZGxpbmUiOjE2NDU3NTkxMDB9:NaTCCIj-hr2l8j-aKbfrXi0pJvE",
             ftype: 40,
-            auth_type: 0,
+            auth_type: 1,
             file: event.target.files[0],
           };
 

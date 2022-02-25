@@ -1,7 +1,7 @@
 import { GatewayConfig } from "@";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import { Login } from "./pages/Login";
-import { Images } from "./pages/Images";
+// import { Login } from "./pages/Login";
+// import { Images } from "./pages/Images";
 import { Api } from "./pages/Api";
 
 import { LoginT } from "./LoginT";
@@ -30,12 +30,8 @@ export default function App() {
             </ul>
           </nav>
           <Switch>
-            <Route path="/login">
-              <Login />
-            </Route>
-            <Route path="/images">
-              <Images />
-            </Route>
+            <Route path="/login">{/* <Login /> */}</Route>
+            <Route path="/images">{/* <Images /> */}</Route>
             <Route path="/api">
               <Api />
             </Route>
