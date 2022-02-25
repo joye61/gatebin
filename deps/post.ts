@@ -1,6 +1,6 @@
 import pbRoot from "./message";
 import zlib from "pako";
-import { buf2str } from "./convert";
+import { buf2str, toParamsFiles } from "./convert";
 import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
@@ -10,7 +10,7 @@ import { type Namespace } from "protobufjs";
 import { addCookiesByUrl, getCookiesByUrl } from "./cookie";
 
 export interface PostOption {
-  body?: XMLHttpRequestBodyInit | Record<string, string>;
+  body?: XMLHttpRequestBodyInit | Record<string, string | File>;
   headers?: Record<string, string>;
   method?: string;
   // 是否启用消息压缩，使用zlib压缩
@@ -40,39 +40,18 @@ export interface RequestMessage {
   rawBody: RawBody;
   files: FileItem[];
 }
-
-/**
- * 规范化参数格式，参数在网络上传输只能是字符串
- * @param input
- */
-function normalizeParams(input: Record<string, any>): Record<string, string> {
-  const output: Record<string, string> = {};
-  if (isPlainObject(input)) {
-    for (let key in input) {
-      output[key] = String(input[key]);
-    }
-  }
-  return output;
-}
-
-export interface Cookie {
-  name: string;
-  value: string;
-  path: string;
-  domain: string;
-  expires: string;
-  maxAge: number;
-  raw: string;
-}
-
 interface HeaderValue {
   value: string[];
 }
 interface ResponseMessage {
   code: number;
   headers: Record<string, HeaderValue>;
-  cookies: Cookie[];
   body: Uint8Array;
+}
+
+interface DebugResponseMessage extends ResponseMessage {
+  bodyAsJson?: any;
+  bodyAsText?: any;
 }
 
 /**
@@ -114,57 +93,63 @@ async function createRequestMessage(
 
   // body: URLSearchParams
   if (option.body instanceof URLSearchParams) {
+    const { params } = await toParamsFiles(option.body);
     message.headers[CtypeName] = Ctypes.UrlEncoded;
-    const params: Record<string, string> = {};
-    for (const [key, value] of option.body) {
-      params[key] = String(value);
-    }
+    message.params = params;
   }
 
   // body: FormData
   else if (option.body instanceof FormData) {
     // FormData类型可能会包含文件上传
+    const { params, files } = await toParamsFiles(option.body);
     message.headers[CtypeName] = Ctypes.FormData;
-    const params: Record<string, string> = {};
-    const files: Array<FileItem> = [];
-    for (const [key, value] of option.body.entries()) {
-      if (value instanceof File) {
-        const buf = await value.arrayBuffer();
-        files.push({
-          key,
-          name: value.name,
-          data: new Uint8Array(buf),
-        });
-      } else {
-        params[key] = String(key);
-      }
-    }
+    message.params = params;
+    message.files = files;
   }
 
   // body: Record<string, string>
   else if (isPlainObject(option.body)) {
-    // JSON对象类型
-    if (userCtype === Ctypes.Json) {
-      message.headers[CtypeName] = Ctypes.Json;
-      rawBody.enabled = true;
-      rawBody.type = 0;
-      rawBody.asPlain = JSON.stringify(option.body);
-    } else if (userCtype === Ctypes.FormData) {
+    // 提取对象中可能存在的文件列表和纯对象列表
+    const { params, files } = await toParamsFiles(
+      option.body as Record<string, string | File>
+    );
+
+    // 如果文件列表不为空，只能为FormData类型
+    if (files.length) {
       message.headers[CtypeName] = Ctypes.FormData;
-      message.params = normalizeParams(option.body as Record<string, string>);
+      message.params = params;
+      message.files = files;
     } else {
-      message.headers[CtypeName] = Ctypes.UrlEncoded;
-      message.params = normalizeParams(option.body as Record<string, string>);
+      // JSON对象类型，需要剔除文件
+      if (userCtype === Ctypes.Json) {
+        message.headers[CtypeName] = Ctypes.Json;
+        rawBody.enabled = true;
+        rawBody.type = 0;
+        rawBody.asPlain = JSON.stringify(params);
+      } else if (userCtype === Ctypes.FormData) {
+        message.headers[CtypeName] = Ctypes.FormData;
+        message.params = params;
+      } else {
+        message.headers[CtypeName] = Ctypes.UrlEncoded;
+        message.params = params;
+      }
     }
   }
 
   // body: string
   else if (typeof option.body === "string") {
-    // 字符串类型
-    message.headers[CtypeName] = Ctypes.Text;
-    rawBody.enabled = true;
-    rawBody.type = 0;
-    rawBody.asPlain = option.body;
+    if (userCtype === Ctypes.UrlEncoded) {
+      const search = new URLSearchParams(option.body);
+      const { params } = await toParamsFiles(search);
+      message.headers[CtypeName] = Ctypes.UrlEncoded;
+      message.params = params;
+    } else {
+      // 字符串类型
+      message.headers[CtypeName] = userCtype || Ctypes.Plain;
+      rawBody.enabled = true;
+      rawBody.type = 0;
+      rawBody.asPlain = option.body;
+    }
   }
 
   // body: Blob
@@ -199,14 +184,16 @@ async function createRequestMessage(
     rawBody.asBinary = new Uint8Array(option.body!.buffer as Uint8Array);
   }
 
-  // body: ohters
+  // body: 其他类型都当做纯文本原始类型处理
   else {
     if (userCtype) {
       message.headers[CtypeName] = userCtype;
+    } else {
+      message.headers[CtypeName] = Ctypes.Plain;
     }
     rawBody.enabled = true;
     rawBody.type = 0;
-    rawBody.asPlain = "";
+    rawBody.asPlain = option.body ? String(option.body) : "";
   }
 
   // cookie相关逻辑
@@ -308,6 +295,25 @@ export class GatewayResponse {
   }
 }
 
+// 用于调试作用的消息ID，自增
+let DebugMessageId = 0;
+/**
+ * 获取用于调试的消息头
+ * @param id
+ * @param type
+ * @returns
+ */
+function getFormatMessageHeader(
+  id: number,
+  type: "Request" | "Response"
+): string[] {
+  return [
+    `%c${type} Message: %c[${id}]`,
+    "background-color:blue;color:#fff;padding:5px 0 5px 10px",
+    "background-color:blue;color:red;padding:5px 10px 5px 0;font-weight:bold",
+  ];
+}
+
 /**
  * 以二进制形式发送请求
  * @param input
@@ -331,7 +337,6 @@ export async function POST(
     const dataResult: ResponseMessage = {
       code: 200,
       headers: {},
-      cookies: [],
       body: new Uint8Array(fetchBuf),
     };
     return new GatewayResponse(dataResult);
@@ -356,8 +361,15 @@ export async function POST(
   // 创建消息
   const payload = await createRequestMessage(url, option);
 
+  // 自增id
+  DebugMessageId += 1;
   if (config.debug) {
-    console.log(`Request Message: \n\n`, payload, "\n\n");
+    console.log(
+      ...getFormatMessageHeader(DebugMessageId, "Request"),
+      "\n\n",
+      payload,
+      "\n\n"
+    );
   }
 
   const message = (pbRoot as Namespace).lookupType("main.RequestMessage");
@@ -392,7 +404,7 @@ export async function POST(
   // 推送请求到网关
   const response = await fetch(config.entry, {
     method: "POST",
-    body: finalBuffer
+    body: finalBuffer,
   });
 
   // 接收网关响应
@@ -406,8 +418,39 @@ export async function POST(
   const respPbMessage = respMessage.decode(new Uint8Array(protobuf));
   const result = respMessage.toObject(respPbMessage) as ResponseMessage;
 
+  // debug模式显示调试信息
   if (config.debug) {
-    console.log("Response Message: \n\n", result, "\n\n");
+    const debugResult: DebugResponseMessage = result;
+    const resTypeRaw = result.headers[CtypeName]?.value?.[0] ?? "";
+    const { type } = typeParse.parse(resTypeRaw);
+    // 如果响应是JSON类型，返回解析后的对象
+    if (type === Ctypes.Json) {
+      const text = await buf2str(result.body);
+      try {
+        debugResult.bodyAsJson = JSON.parse(text);
+      } catch (error) {
+        debugResult.bodyAsJson = (<SyntaxError>error).message;
+      }
+    }
+
+    // 如果响应是文本类型，返回解析后的文本
+    const checks: string[] = [
+      Ctypes.Ajs,
+      Ctypes.Js,
+      Ctypes.Css,
+      Ctypes.Html,
+      Ctypes.Plain,
+    ];
+    if (checks.includes(type)) {
+      const text = await buf2str(result.body);
+      debugResult.bodyAsText = text;
+    }
+    console.log(
+      ...getFormatMessageHeader(DebugMessageId, "Response"),
+      "\n\n",
+      debugResult,
+      "\n\n"
+    );
   }
 
   // 处理接收到的信息

@@ -47,40 +47,42 @@ export function addCookiesByUrl(url: string, items?: Array<string>) {
   const startTime = Date.now();
 
   // 解析cookie数据
-  const cookies: Cookie[] = parser(items).map((item) => {
-    // 确保domain值存在
-    let domain = urlObj.hostname;
-    if (item.domain) {
-      domain = item.domain.replace(/^\./, "");
-    }
-
-    // 确保path值存在
-    let path = "/";
-    if (item.path) {
-      path = item.path;
-    }
-
-    // 用maxAge取代expires，保证maxAge始终存在
-    let maxAge = item.maxAge;
-    if (!maxAge) {
-      // 如果maxAge不存在，但是expires存在
-      if (item.expires instanceof Date) {
-        maxAge = (item.expires.valueOf() - startTime) / 1000;
-      } else {
-        // 如果maxAge和expires都不存在，session生命周期
-        maxAge = -1;
+  const cookies: Cookie[] = parser(items, { decodeValues: false }).map(
+    (item) => {
+      // 确保domain值存在
+      let domain = urlObj.hostname;
+      if (item.domain) {
+        domain = item.domain.replace(/^\./, "");
       }
-    }
 
-    return {
-      name: item.name,
-      value: item.value,
-      path,
-      domain,
-      maxAge: maxAge!,
-      startTime,
-    };
-  });
+      // 确保path值存在
+      let path = "/";
+      if (item.path) {
+        path = item.path;
+      }
+
+      // 用maxAge取代expires，保证maxAge始终存在
+      let maxAge = item.maxAge;
+      if (typeof maxAge !== "number") {
+        // 如果maxAge不存在，但是expires存在
+        if (item.expires instanceof Date) {
+          maxAge = (item.expires.valueOf() - startTime) / 1000;
+        } else {
+          // 如果maxAge和expires都不存在，session生命周期
+          maxAge = -1;
+        }
+      }
+
+      return {
+        name: item.name,
+        value: item.value,
+        path,
+        domain,
+        maxAge: maxAge!,
+        startTime,
+      };
+    }
+  );
 
   // 存储cookie
   for (let item of cookies) {
@@ -116,6 +118,7 @@ export function addCookiesByUrl(url: string, items?: Array<string>) {
 /**
  * 获取将要发送到URL的所有cookie
  * @param url
+ * @returns 返回即将请求的URL对应的所有cookies
  */
 export function getCookiesByUrl(url: string): Cookie[] {
   const urlObj = new URL(url);

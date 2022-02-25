@@ -1,7 +1,7 @@
 {
-  "name": "bin-gateway",
+  "name": "gatebin",
   "version": "0.0.1",
-  "description": "通用二进制网关",
+  "description": "Binary Gateway Front End SDK",
   "main": "./dist/index.js",
   "scripts": {
     "start": "npm run clear && tsc && concurrently --timings npm:watch:ts npm:watch:test",
@@ -16,6 +16,10 @@
   "repository": {
     "type": "git",
     "url": "git@git.chelun.com:zhoujing2/bin-gateway.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
   },
   "keywords": [
     "bin",

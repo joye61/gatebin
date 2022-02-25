@@ -1,4 +1,4 @@
-module bin-gateway
+module gatebin
 
 go 1.17
 

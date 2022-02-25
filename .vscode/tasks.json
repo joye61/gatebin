@@ -7,7 +7,7 @@
       "label": "windows",
       "type": "shell",
       "command": "go",
-      "args": ["build", "-o", "../bin/gateway-windows.exe"],
+      "args": ["build", "-o", "../bin/gatebin-windows.exe"],
       "options": {
         "env": {
           "GOOS": "windows"
@@ -19,7 +19,7 @@
       "label": "darwin",
       "type": "shell",
       "command": "go",
-      "args": ["build", "-o", "../bin/gateway-darwin"],
+      "args": ["build", "-o", "../bin/gatebin-darwin"],
       "options": {
         "env": {
           "GOOS": "darwin"
@@ -31,7 +31,7 @@
       "label": "linux",
       "type": "shell",
       "command": "go",
-      "args": ["build", "-o", "../bin/gateway-linux"],
+      "args": ["build", "-o", "../bin/gatebin-linux"],
       "options": {
         "env": {
           "GOOS": "linux"
@@ -40,7 +40,7 @@
       }
     },
     {
-      "label": "Gateway",
+      "label": "GateBin",
       "dependsOrder": "parallel",
       "dependsOn": ["windows", "darwin", "linux"]
     }

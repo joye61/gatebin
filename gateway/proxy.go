@@ -17,7 +17,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-/// 目前只允许GET和POST类型的代理请求
 func ProxyRequest(c echo.Context) error {
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
@@ -50,6 +49,13 @@ func ProxyRequest(c echo.Context) error {
 	for key, value := range reqHeaders {
 		headers.Set(key, value)
 	}
+	// 设置请求的最终目标Host
+	urlObj, err := url.Parse(requestMessage.GetUrl())
+	if err != nil {
+		LogError(c, 10, err)
+		return err
+	}
+	headers.Set("Host", urlObj.Host)
 
 	// 封装请求体
 	rawBody := requestMessage.GetRawBody()
@@ -95,6 +101,7 @@ func ProxyRequest(c echo.Context) error {
 				}
 			}
 			multi.Close()
+			headers.Set("Content-Type", multi.FormDataContentType())
 			sendBody = w
 		}
 	}
@@ -107,7 +114,7 @@ func ProxyRequest(c echo.Context) error {
 	req, err := http.NewRequestWithContext(
 		ctx,
 		requestMessage.GetMethod(),
-		requestMessage.GetUrl(),
+		strings.Trim(requestMessage.GetUrl(), " "),
 		sendBody,
 	)
 	if err != nil {
@@ -167,5 +174,5 @@ func ProxyRequest(c echo.Context) error {
 	c.Response().Header().Set("Server", ServerName)
 
 	// 发送响应
-	return c.Blob(http.StatusOK, echo.MIMEApplicationProtobuf, respData)
+	return c.Blob(http.StatusOK, echo.MIMEOctetStream, respData)
 }
