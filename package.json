@@ -1,6 +1,6 @@
 {
-  "name": "bin-gateway",
-  "version": "0.0.1",
+  "name": "gatebin",
+  "version": "0.0.2",
   "description": "Binary Gateway Front End SDK",
   "main": "./dist/index.js",
   "scripts": {
@@ -15,7 +15,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@git.chelun.com:zhoujing2/bin-gateway.git"
+    "url": "https://github.com/joye61/gatebin"
   },
   "keywords": [
     "bin",
