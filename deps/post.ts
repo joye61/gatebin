@@ -51,6 +51,7 @@ interface ResponseMessage {
 
 interface DebugResponseMessage extends ResponseMessage {
   bodyAsJson?: any;
+  bodyAsText?: any;
 }
 
 /**
@@ -330,6 +331,25 @@ export class GatewayResponse {
   }
 }
 
+// 用于调试作用的消息ID，自增
+let DebugMessageId = 0;
+/**
+ * 获取用于调试的消息头
+ * @param id
+ * @param type
+ * @returns
+ */
+function getFormatMessageHeader(
+  id: number,
+  type: "Request" | "Response"
+): string[] {
+  return [
+    `%c${type} Message ID: %c[${id}]`,
+    "background-color:blue;color:#fff;padding:5px 0 5px 10px",
+    "background-color:blue;color:red;padding:5px 10px 5px 0;font-weight:bold",
+  ];
+}
+
 /**
  * 以二进制形式发送请求
  * @param input
@@ -377,10 +397,11 @@ export async function POST(
   // 创建消息
   const payload = await createRequestMessage(url, option);
 
+  // 自增id
+  DebugMessageId += 1;
   if (config.debug) {
     console.log(
-      "  %cRequest Message",
-      "background-color:blue;color:#fff;padding:1px 5px",
+      ...getFormatMessageHeader(DebugMessageId, "Request"),
       "\n\n",
       payload,
       "\n\n"
@@ -447,9 +468,21 @@ export async function POST(
         debugResult.bodyAsJson = (<SyntaxError>error).message;
       }
     }
+
+    // 如果响应是文本类型，返回解析后的文本
+    const checks: string[] = [
+      Ctypes.Ajs,
+      Ctypes.Js,
+      Ctypes.Css,
+      Ctypes.Html,
+      Ctypes.Plain,
+    ];
+    if (checks.includes(type)) {
+      const text = await buf2str(result.body);
+      debugResult.bodyAsText = text;
+    }
     console.log(
-      "  %cResponse Message",
-      "background-color:blue;color:#fff;padding:1px 5px",
+      ...getFormatMessageHeader(DebugMessageId, "Response"),
       "\n\n",
       debugResult,
       "\n\n"
