@@ -1,5 +1,5 @@
 {
-  "name": "gatebin",
+  "name": "bin-gateway",
   "version": "0.0.1",
   "description": "Binary Gateway Front End SDK",
   "main": "./dist/index.js",
@@ -17,14 +17,14 @@
     "type": "git",
     "url": "git@git.chelun.com:zhoujing2/bin-gateway.git"
   },
-  "publishConfig": {
-    "registry": "https://registry.npmjs.org",
-    "access": "public"
-  },
   "keywords": [
     "bin",
     "gateway"
   ],
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org",
+    "access": "public"
+  },
   "author": "joye",
   "license": "MIT",
   "devDependencies": {
