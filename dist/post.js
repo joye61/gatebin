@@ -55,6 +55,7 @@ function createRequestMessage(url, option) {
             for (const [key, value] of option.body) {
                 params[key] = String(value);
             }
+            message.params = params;
         }
         else if (option.body instanceof FormData) {
             message.headers[CtypeName] = Ctypes.FormData;
@@ -73,21 +74,46 @@ function createRequestMessage(url, option) {
                     params[key] = String(key);
                 }
             }
+            message.params = params;
+            message.files = files;
         }
         else if (isPlainObject(option.body)) {
-            if (userCtype === Ctypes.Json) {
-                message.headers[CtypeName] = Ctypes.Json;
-                rawBody.enabled = true;
-                rawBody.type = 0;
-                rawBody.asPlain = JSON.stringify(option.body);
+            const params = {};
+            const files = [];
+            for (let key in option.body) {
+                const value = option.body[key];
+                if (value instanceof File) {
+                    const buf = yield value.arrayBuffer();
+                    files.push({
+                        key,
+                        name: value.name,
+                        data: new Uint8Array(buf),
+                    });
+                }
+                else {
+                    params[key] = String(key);
+                }
             }
-            else if (userCtype === Ctypes.FormData) {
+            if (files.length) {
                 message.headers[CtypeName] = Ctypes.FormData;
-                message.params = normalizeParams(option.body);
+                message.params = normalizeParams(params);
+                message.files = files;
             }
             else {
-                message.headers[CtypeName] = Ctypes.UrlEncoded;
-                message.params = normalizeParams(option.body);
+                if (userCtype === Ctypes.Json) {
+                    message.headers[CtypeName] = Ctypes.Json;
+                    rawBody.enabled = true;
+                    rawBody.type = 0;
+                    rawBody.asPlain = JSON.stringify(params);
+                }
+                else if (userCtype === Ctypes.FormData) {
+                    message.headers[CtypeName] = Ctypes.FormData;
+                    message.params = normalizeParams(params);
+                }
+                else {
+                    message.headers[CtypeName] = Ctypes.UrlEncoded;
+                    message.params = normalizeParams(params);
+                }
             }
         }
         else if (typeof option.body === "string") {
@@ -126,7 +152,7 @@ function createRequestMessage(url, option) {
             }
             rawBody.enabled = true;
             rawBody.type = 0;
-            rawBody.asPlain = "";
+            rawBody.asPlain = option.body ? String(option.body) : "";
         }
         const cookies = getCookiesByUrl(url);
         if (cookies.length) {
@@ -213,7 +239,6 @@ export function POST(url, option) {
             const dataResult = {
                 code: 200,
                 headers: {},
-                cookies: [],
                 body: new Uint8Array(fetchBuf),
             };
             return new GatewayResponse(dataResult);
@@ -259,7 +284,7 @@ export function POST(url, option) {
         }
         const response = yield fetch(config.entry, {
             method: "POST",
-            body: finalBuffer
+            body: finalBuffer,
         });
         let responseBuf = yield response.arrayBuffer();
         let protobuf = new Uint8Array(responseBuf);

@@ -1,5 +1,5 @@
 export interface PostOption {
-    body?: XMLHttpRequestBodyInit | Record<string, string>;
+    body?: XMLHttpRequestBodyInit | Record<string, string | File>;
     headers?: Record<string, string>;
     method?: string;
     compress?: boolean;
@@ -23,22 +23,12 @@ export interface RequestMessage {
     rawBody: RawBody;
     files: FileItem[];
 }
-export interface Cookie {
-    name: string;
-    value: string;
-    path: string;
-    domain: string;
-    expires: string;
-    maxAge: number;
-    raw: string;
-}
 interface HeaderValue {
     value: string[];
 }
 interface ResponseMessage {
     code: number;
     headers: Record<string, HeaderValue>;
-    cookies: Cookie[];
     body: Uint8Array;
 }
 export declare class GatewayResponse {

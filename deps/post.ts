@@ -10,7 +10,7 @@ import { type Namespace } from "protobufjs";
 import { addCookiesByUrl, getCookiesByUrl } from "./cookie";
 
 export interface PostOption {
-  body?: XMLHttpRequestBodyInit | Record<string, string>;
+  body?: XMLHttpRequestBodyInit | Record<string, string | File>;
   headers?: Record<string, string>;
   method?: string;
   // 是否启用消息压缩，使用zlib压缩
@@ -54,24 +54,12 @@ function normalizeParams(input: Record<string, any>): Record<string, string> {
   }
   return output;
 }
-
-export interface Cookie {
-  name: string;
-  value: string;
-  path: string;
-  domain: string;
-  expires: string;
-  maxAge: number;
-  raw: string;
-}
-
 interface HeaderValue {
   value: string[];
 }
 interface ResponseMessage {
   code: number;
   headers: Record<string, HeaderValue>;
-  cookies: Cookie[];
   body: Uint8Array;
 }
 
@@ -119,6 +107,7 @@ async function createRequestMessage(
     for (const [key, value] of option.body) {
       params[key] = String(value);
     }
+    message.params = params;
   }
 
   // body: FormData
@@ -139,22 +128,49 @@ async function createRequestMessage(
         params[key] = String(key);
       }
     }
+    message.params = params;
+    message.files = files;
   }
 
   // body: Record<string, string>
   else if (isPlainObject(option.body)) {
-    // JSON对象类型
-    if (userCtype === Ctypes.Json) {
-      message.headers[CtypeName] = Ctypes.Json;
-      rawBody.enabled = true;
-      rawBody.type = 0;
-      rawBody.asPlain = JSON.stringify(option.body);
-    } else if (userCtype === Ctypes.FormData) {
+    // 提取对象中可能存在的文件列表和纯对象列表
+    const params: Record<string, string> = {};
+    const files: Array<FileItem> = [];
+    type BodyObject = Record<string, string | File>;
+    for (let key in <BodyObject>option.body) {
+      const value = (<BodyObject>option.body)[key];
+      if (value instanceof File) {
+        const buf = await value.arrayBuffer();
+        files.push({
+          key,
+          name: value.name,
+          data: new Uint8Array(buf),
+        });
+      } else {
+        params[key] = String(key);
+      }
+    }
+
+    // 如果文件列表不为空，只能为FormData类型
+    if (files.length) {
       message.headers[CtypeName] = Ctypes.FormData;
-      message.params = normalizeParams(option.body as Record<string, string>);
+      message.params = normalizeParams(params as Record<string, string>);
+      message.files = files;
     } else {
-      message.headers[CtypeName] = Ctypes.UrlEncoded;
-      message.params = normalizeParams(option.body as Record<string, string>);
+      // JSON对象类型，需要剔除文件
+      if (userCtype === Ctypes.Json) {
+        message.headers[CtypeName] = Ctypes.Json;
+        rawBody.enabled = true;
+        rawBody.type = 0;
+        rawBody.asPlain = JSON.stringify(params);
+      } else if (userCtype === Ctypes.FormData) {
+        message.headers[CtypeName] = Ctypes.FormData;
+        message.params = normalizeParams(params as Record<string, string>);
+      } else {
+        message.headers[CtypeName] = Ctypes.UrlEncoded;
+        message.params = normalizeParams(params as Record<string, string>);
+      }
     }
   }
 
@@ -206,7 +222,7 @@ async function createRequestMessage(
     }
     rawBody.enabled = true;
     rawBody.type = 0;
-    rawBody.asPlain = "";
+    rawBody.asPlain = option.body ? String(option.body) : "";
   }
 
   // cookie相关逻辑
@@ -331,7 +347,6 @@ export async function POST(
     const dataResult: ResponseMessage = {
       code: 200,
       headers: {},
-      cookies: [],
       body: new Uint8Array(fetchBuf),
     };
     return new GatewayResponse(dataResult);
@@ -392,7 +407,7 @@ export async function POST(
   // 推送请求到网关
   const response = await fetch(config.entry, {
     method: "POST",
-    body: finalBuffer
+    body: finalBuffer,
   });
 
   // 接收网关响应
