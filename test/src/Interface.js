@@ -70,14 +70,13 @@ export function InterfaceTest() {
         onChange={(event) => {
           console.log(event.target.files[0], "event.target.files[0]");
           let data = {
-            // token:
-            //   "eyJmdHlwZSI6NDAsInVzZXJfaWQiOjEsImFjY2Vzc19rZXkiOiJjaGV6aHUuZWNsaWNrcy5jbjE0NzY5NTUwMjY0NDE2IiwiZGVhZGxpbmUiOjE2NDU3NTkxMDB9:NaTCCIj-hr2l8j-aKbfrXi0pJvE",
-            ftype: 40,
+            ftype: 29,
             auth_type: 1,
             file: event.target.files[0],
           };
 
           let body = new FormData();
+
           for (let key in data) {
             if (data.hasOwnProperty(key)) {
               body.append(key, data[key]);
