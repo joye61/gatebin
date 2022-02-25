@@ -49,6 +49,9 @@ func ProxyRequest(c echo.Context) error {
 	for key, value := range reqHeaders {
 		headers.Set(key, value)
 	}
+	headers.Set("Host", c.Request().Host)
+	headers.Del("Referer")
+	headers.Del("Origin")
 
 	// 封装请求体
 	rawBody := requestMessage.GetRawBody()
@@ -94,6 +97,7 @@ func ProxyRequest(c echo.Context) error {
 				}
 			}
 			multi.Close()
+			headers.Set("Content-Type", multi.FormDataContentType())
 			sendBody = w
 		}
 	}

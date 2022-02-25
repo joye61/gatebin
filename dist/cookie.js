@@ -20,7 +20,7 @@ export function addCookiesByUrl(url, items) {
         return;
     const urlObj = new URL(url);
     const startTime = Date.now();
-    const cookies = parser(items).map((item) => {
+    const cookies = parser(items, { decodeValues: false }).map((item) => {
         let domain = urlObj.hostname;
         if (item.domain) {
             domain = item.domain.replace(/^\./, "");
@@ -30,7 +30,7 @@ export function addCookiesByUrl(url, items) {
             path = item.path;
         }
         let maxAge = item.maxAge;
-        if (!maxAge) {
+        if (typeof maxAge !== "number") {
             if (item.expires instanceof Date) {
                 maxAge = (item.expires.valueOf() - startTime) / 1000;
             }

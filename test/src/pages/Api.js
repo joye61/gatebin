@@ -15,13 +15,14 @@ export function Api() {
     //   },
     // });
     send(
-      `https://passport.chelun.com/api_v2/get_sms_captcha?os=h5`,
-      {
-        method: "POST",
-        body: {
-          phone: 13482228079,
-        },
-      }
+      // `https://file.chelun.com/upload`
+      `https://activity.chelun.com/FinishedTaskAchieveMoney/userTaskList`,
+      // {
+      //   // method: "POST",
+      //   body: {
+      //     phone: 13482228079,
+      //   },
+      // }
     );
   }, []);
 
