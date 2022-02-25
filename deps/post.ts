@@ -129,7 +129,7 @@ async function createRequestMessage(
           data: new Uint8Array(buf),
         });
       } else {
-        params[key] = String(key);
+        params[key] = String(value);
       }
     }
     message.params = params;
@@ -379,7 +379,7 @@ export async function POST(
 
   if (config.debug) {
     console.log(
-      "%cRequest Message",
+      "  %cRequest Message",
       "background-color:blue;color:#fff;padding:1px 5px",
       "\n\n",
       payload,
@@ -448,7 +448,7 @@ export async function POST(
       }
     }
     console.log(
-      "%cResponse Message",
+      "  %cResponse Message",
       "background-color:blue;color:#fff;padding:1px 5px",
       "\n\n",
       debugResult,

@@ -71,7 +71,7 @@ function createRequestMessage(url, option) {
                     });
                 }
                 else {
-                    params[key] = String(key);
+                    params[key] = String(value);
                 }
             }
             message.params = params;
@@ -261,7 +261,7 @@ export function POST(url, option) {
         }
         const payload = yield createRequestMessage(url, option);
         if (config.debug) {
-            console.log("%cRequest Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", payload, "\n\n");
+            console.log("  %cRequest Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", payload, "\n\n");
         }
         const message = pbRoot.lookupType("main.RequestMessage");
         const verifyErr = message.verify(payload);
@@ -310,7 +310,7 @@ export function POST(url, option) {
                     debugResult.bodyAsJson = error.message;
                 }
             }
-            console.log("%cResponse Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", debugResult, "\n\n");
+            console.log("  %cResponse Message", "background-color:blue;color:#fff;padding:1px 5px", "\n\n", debugResult, "\n\n");
         }
         addCookiesByUrl(url, (_e = (_d = result.headers) === null || _d === void 0 ? void 0 : _d["set-cookie"]) === null || _e === void 0 ? void 0 : _e.value);
         return new GatewayResponse(result);
