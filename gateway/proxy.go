@@ -17,7 +17,6 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-/// 目前只允许GET和POST类型的代理请求
 func ProxyRequest(c echo.Context) error {
 	body, err := ioutil.ReadAll(c.Request().Body)
 	if err != nil {
