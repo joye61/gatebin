@@ -3,7 +3,7 @@ export enum Ctypes {
   Json = "application/json",
   FormData = "multipart/form-data",
   UrlEncoded = "application/x-www-form-urlencoded",
-  Text = "text/plain",
+  Plain = "text/plain",
 }
 
 export const CtypeName = "content-type";

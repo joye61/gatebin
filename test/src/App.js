@@ -1,7 +1,5 @@
 import { GatewayConfig } from "@";
 import { BrowserRouter as Router, Switch, Route, Link } from "react-router-dom";
-import { Login } from "./pages/Login";
-import { Images } from "./pages/Images";
 import { Api } from "./pages/Api";
 
 GatewayConfig({
@@ -16,23 +14,11 @@ export default function App() {
         <nav>
           <ul>
             <li>
-              <Link to="/login">登录测试</Link>
-            </li>
-            <li>
-              <Link to="/images">图片加载测试</Link>
-            </li>
-            <li>
               <Link to="/api">接口请求测试</Link>
             </li>
           </ul>
         </nav>
         <Switch>
-          <Route path="/login">
-            <Login />
-          </Route>
-          <Route path="/images">
-            <Images />
-          </Route>
           <Route path="/api">
             <Api />
           </Route>
