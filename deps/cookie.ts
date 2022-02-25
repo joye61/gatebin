@@ -118,6 +118,7 @@ export function addCookiesByUrl(url: string, items?: Array<string>) {
 /**
  * 获取将要发送到URL的所有cookie
  * @param url
+ * @returns 返回即将请求的URL对应的所有cookies
  */
 export function getCookiesByUrl(url: string): Cookie[] {
   const urlObj = new URL(url);

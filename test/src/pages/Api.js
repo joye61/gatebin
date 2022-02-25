@@ -16,7 +16,7 @@ export function Api() {
     // });
     send(
       // `https://file.chelun.com/upload`
-      `https://activity.chelun.com/FinishedTaskAchieveMoney/userTaskList`,
+      `https://newcar.chelun.com/CarDefenseRocket/getNum`
       // {
       //   // method: "POST",
       //   body: {

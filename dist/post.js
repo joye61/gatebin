@@ -9,22 +9,13 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 import pbRoot from "./message";
 import zlib from "pako";
-import { buf2str } from "./convert";
+import { buf2str, toParamsFiles } from "./convert";
 import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
 import typeParse from "content-type";
 import { CtypeName, Ctypes } from "./type";
 import { addCookiesByUrl, getCookiesByUrl } from "./cookie";
-function normalizeParams(input) {
-    const output = {};
-    if (isPlainObject(input)) {
-        for (let key in input) {
-            output[key] = String(input[key]);
-        }
-    }
-    return output;
-}
 function createRequestMessage(url, option) {
     var _a, _b;
     return __awaiter(this, void 0, void 0, function* () {
@@ -50,54 +41,21 @@ function createRequestMessage(url, option) {
             userCtype = parseResult.type;
         }
         if (option.body instanceof URLSearchParams) {
+            const { params } = yield toParamsFiles(option.body);
             message.headers[CtypeName] = Ctypes.UrlEncoded;
-            const params = {};
-            for (const [key, value] of option.body) {
-                params[key] = String(value);
-            }
             message.params = params;
         }
         else if (option.body instanceof FormData) {
-            console.log(555);
+            const { params, files } = yield toParamsFiles(option.body);
             message.headers[CtypeName] = Ctypes.FormData;
-            const params = {};
-            const files = [];
-            for (const [key, value] of option.body.entries()) {
-                if (value instanceof File) {
-                    const buf = yield value.arrayBuffer();
-                    files.push({
-                        key,
-                        name: value.name,
-                        data: new Uint8Array(buf),
-                    });
-                }
-                else {
-                    params[key] = String(value);
-                }
-            }
             message.params = params;
             message.files = files;
         }
         else if (isPlainObject(option.body)) {
-            const params = {};
-            const files = [];
-            for (let key in option.body) {
-                const value = option.body[key];
-                if (value instanceof File) {
-                    const buf = yield value.arrayBuffer();
-                    files.push({
-                        key,
-                        name: value.name,
-                        data: new Uint8Array(buf),
-                    });
-                }
-                else {
-                    params[key] = value;
-                }
-            }
+            const { params, files } = yield toParamsFiles(option.body);
             if (files.length) {
                 message.headers[CtypeName] = Ctypes.FormData;
-                message.params = normalizeParams(params);
+                message.params = params;
                 message.files = files;
             }
             else {
@@ -109,19 +67,27 @@ function createRequestMessage(url, option) {
                 }
                 else if (userCtype === Ctypes.FormData) {
                     message.headers[CtypeName] = Ctypes.FormData;
-                    message.params = normalizeParams(params);
+                    message.params = params;
                 }
                 else {
                     message.headers[CtypeName] = Ctypes.UrlEncoded;
-                    message.params = normalizeParams(params);
+                    message.params = params;
                 }
             }
         }
         else if (typeof option.body === "string") {
-            message.headers[CtypeName] = Ctypes.Plain;
-            rawBody.enabled = true;
-            rawBody.type = 0;
-            rawBody.asPlain = option.body;
+            if (userCtype === Ctypes.UrlEncoded) {
+                const search = new URLSearchParams(option.body);
+                const { params } = yield toParamsFiles(search);
+                message.headers[CtypeName] = Ctypes.UrlEncoded;
+                message.params = params;
+            }
+            else {
+                message.headers[CtypeName] = userCtype || Ctypes.Plain;
+                rawBody.enabled = true;
+                rawBody.type = 0;
+                rawBody.asPlain = option.body;
+            }
         }
         else if (option.body instanceof Blob) {
             if (option.body.type) {

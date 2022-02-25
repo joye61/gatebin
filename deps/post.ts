@@ -1,6 +1,6 @@
 import pbRoot from "./message";
 import zlib from "pako";
-import { buf2str } from "./convert";
+import { buf2str, toParamsFiles } from "./convert";
 import { config } from "./config";
 import isPlainObject from "lodash/isPlainObject";
 import isTypedArray from "lodash/isTypedArray";
@@ -55,20 +55,6 @@ interface DebugResponseMessage extends ResponseMessage {
 }
 
 /**
- * 规范化参数格式，参数在网络上传输只能是字符串
- * @param input
- */
-function normalizeParams(input: Record<string, any>): Record<string, string> {
-  const output: Record<string, string> = {};
-  if (isPlainObject(input)) {
-    for (let key in input) {
-      output[key] = String(input[key]);
-    }
-  }
-  return output;
-}
-
-/**
  * 根据输入创建消息类型
  * @param url
  * @param option
@@ -107,33 +93,16 @@ async function createRequestMessage(
 
   // body: URLSearchParams
   if (option.body instanceof URLSearchParams) {
+    const { params } = await toParamsFiles(option.body);
     message.headers[CtypeName] = Ctypes.UrlEncoded;
-    const params: Record<string, string> = {};
-    for (const [key, value] of option.body) {
-      params[key] = String(value);
-    }
     message.params = params;
   }
 
   // body: FormData
   else if (option.body instanceof FormData) {
-    console.log(555);
     // FormData类型可能会包含文件上传
+    const { params, files } = await toParamsFiles(option.body);
     message.headers[CtypeName] = Ctypes.FormData;
-    const params: Record<string, string> = {};
-    const files: Array<FileItem> = [];
-    for (const [key, value] of option.body.entries()) {
-      if (value instanceof File) {
-        const buf = await value.arrayBuffer();
-        files.push({
-          key,
-          name: value.name,
-          data: new Uint8Array(buf),
-        });
-      } else {
-        params[key] = String(value);
-      }
-    }
     message.params = params;
     message.files = files;
   }
@@ -141,27 +110,14 @@ async function createRequestMessage(
   // body: Record<string, string>
   else if (isPlainObject(option.body)) {
     // 提取对象中可能存在的文件列表和纯对象列表
-    const params: Record<string, string> = {};
-    const files: Array<FileItem> = [];
-    type BodyObject = Record<string, string | File>;
-    for (let key in <BodyObject>option.body) {
-      const value = (<BodyObject>option.body)[key];
-      if (value instanceof File) {
-        const buf = await value.arrayBuffer();
-        files.push({
-          key,
-          name: value.name,
-          data: new Uint8Array(buf),
-        });
-      } else {
-        params[key] = value;
-      }
-    }
+    const { params, files } = await toParamsFiles(
+      option.body as Record<string, string | File>
+    );
 
     // 如果文件列表不为空，只能为FormData类型
     if (files.length) {
       message.headers[CtypeName] = Ctypes.FormData;
-      message.params = normalizeParams(params as Record<string, string>);
+      message.params = params;
       message.files = files;
     } else {
       // JSON对象类型，需要剔除文件
@@ -172,21 +128,28 @@ async function createRequestMessage(
         rawBody.asPlain = JSON.stringify(params);
       } else if (userCtype === Ctypes.FormData) {
         message.headers[CtypeName] = Ctypes.FormData;
-        message.params = normalizeParams(params as Record<string, string>);
+        message.params = params;
       } else {
         message.headers[CtypeName] = Ctypes.UrlEncoded;
-        message.params = normalizeParams(params as Record<string, string>);
+        message.params = params;
       }
     }
   }
 
   // body: string
   else if (typeof option.body === "string") {
-    // 字符串类型
-    message.headers[CtypeName] = Ctypes.Plain;
-    rawBody.enabled = true;
-    rawBody.type = 0;
-    rawBody.asPlain = option.body;
+    if (userCtype === Ctypes.UrlEncoded) {
+      const search = new URLSearchParams(option.body);
+      const { params } = await toParamsFiles(search);
+      message.headers[CtypeName] = Ctypes.UrlEncoded;
+      message.params = params;
+    } else {
+      // 字符串类型
+      message.headers[CtypeName] = userCtype || Ctypes.Plain;
+      rawBody.enabled = true;
+      rawBody.type = 0;
+      rawBody.asPlain = option.body;
+    }
   }
 
   // body: Blob

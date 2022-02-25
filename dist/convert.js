@@ -30,3 +30,39 @@ export function buf2str(buffer) {
         }
     });
 }
+export function toParamsFiles(input) {
+    return __awaiter(this, void 0, void 0, function* () {
+        const params = {};
+        const files = [];
+        const fillValueFromKV = (key, value) => __awaiter(this, void 0, void 0, function* () {
+            if (value instanceof File) {
+                const buf = yield value.arrayBuffer();
+                files.push({
+                    key,
+                    name: value.name,
+                    data: new Uint8Array(buf),
+                });
+            }
+            else {
+                params[key] = String(value);
+            }
+        });
+        if (input instanceof FormData) {
+            for (const [key, value] of input.entries()) {
+                yield fillValueFromKV(key, value);
+            }
+        }
+        else if (input instanceof URLSearchParams) {
+            for (const [key, value] of input) {
+                params[key] = String(value);
+            }
+        }
+        else {
+            for (let key in input) {
+                const value = input[key];
+                yield fillValueFromKV(key, value);
+            }
+        }
+        return { params, files };
+    });
+}
