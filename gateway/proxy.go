@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"context"
+	"crypto/tls"
 	"io"
 	"io/ioutil"
 	"mime"
@@ -124,7 +125,16 @@ func ProxyRequest(c echo.Context) error {
 	// 更新请求头
 	req.Header = headers
 	// 发送请求
-	resp, err := http.DefaultClient.Do(req)
+	client := &http.Client{}
+	// 开发环境跳过https证书验证
+	if Mode == "dev" {
+		client.Transport = &http.Transport{
+			TLSClientConfig: &tls.Config{
+				InsecureSkipVerify: true,
+			},
+		}
+	}
+	resp, err := client.Do(req)
 	if err != nil {
 		LogError(c, 6, err)
 		return err
