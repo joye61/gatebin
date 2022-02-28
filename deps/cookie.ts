@@ -66,7 +66,7 @@ export function addCookiesByUrl(url: string, items?: Array<string>) {
       if (typeof maxAge !== "number") {
         // 如果maxAge不存在，但是expires存在
         if (item.expires instanceof Date) {
-          maxAge = (item.expires.valueOf() - startTime) / 1000;
+          maxAge = item.expires.valueOf() - startTime;
         } else {
           // 如果maxAge和expires都不存在，session生命周期
           maxAge = -1;
@@ -146,10 +146,7 @@ export function getCookiesByUrl(url: string): Cookie[] {
       for (let name of names) {
         const item = localValue[name];
         // 首先判断是否过期，如果过期，则要删除
-        if (
-          item.maxAge <= 0 ||
-          Date.now() / 1000 >= item.startTime + item.maxAge
-        ) {
+        if (item.maxAge <= 0 || Date.now() >= item.startTime + item.maxAge) {
           delete localValue[name];
           continue;
         }

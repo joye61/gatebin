@@ -1,6 +1,6 @@
 {
   "name": "gatebin",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Binary Gateway Front End SDK",
   "main": "./dist/index.js",
   "scripts": {
