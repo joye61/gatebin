@@ -15,5 +15,6 @@
     "strict": true,
     "alwaysStrict": true
   },
-  "include": ["client/**/*"]
+  "include": ["client/**/*"],
+  "exclude": ["client/**/*.test.ts"]
 }
