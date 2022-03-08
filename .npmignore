@@ -1,9 +1,6 @@
 /.vscode/
 /bin/
-/deps/
-/gateway/
 /node_modules/
-/test/
 /.gitignore
 /.npmignore
 /jsconfig.json

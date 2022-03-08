@@ -6,7 +6,7 @@ import { type FileItem } from "./post";
  * @returns
  */
 export async function str2buf(str: string): Promise<ArrayBuffer> {
-  const blob = new Blob([str], { type: "text/plain" });
+  const blob = new Blob([str]);
   return blob.arrayBuffer();
 }
 
@@ -15,8 +15,8 @@ export async function str2buf(str: string): Promise<ArrayBuffer> {
  * @param buffer
  * @returns
  */
-export async function buf2str(buffer: Uint8Array): Promise<string> {
-  const blob = new Blob([buffer], { type: "text/plain" });
+export async function buf2str(buffer: BlobPart): Promise<string> {
+  const blob = new Blob([buffer]);
   if (typeof blob.text === "function") {
     return blob.text();
   } else {
