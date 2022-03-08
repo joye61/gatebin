@@ -49,24 +49,26 @@ export async function buf2str(buffer: BlobPart): Promise<string> {
 /**
  * 请求消息编码
  *
- * --------------------------------------------------
- * b1 是否压缩：1字节
- * --------------------------------------------------
- * b2 参数长度：4字节
- * --------------------------------------------------
- * b3 参数区(长度在头两个字节配置)：
- *  Method：请求方法
- *  URL：请求的地址
- *  Header：自定义请求头
- *  Params: 参数
- *  RawBody：原始Body
- *  Files：文件列表
- * --------------------------------------------------
+ * -----------------------------
+ * b1 是否压缩 1字节
+ * -----------------------------
+ * b2 参数长度 4字节
+ *    代表是参数区占用的字节长度
+ * -----------------------------
+ * b3 参数区
+ *    Method：请求方法
+ *    URL：请求的地址
+ *    Header：自定义请求头
+ *    Params: 参数
+ *    RawBody：RawBody描述对象
+ *    Files：文件列表描述对象
+ * -----------------------------
  * b4 RawBody
- *  只能是JSON字符串，代理透传
- * --------------------------------------------------
- * b5 文件列表区
- * --------------------------------------------------
+ *    可能是代表字符串的字节数组
+ *    可能是原始二进制字节数组
+ * -----------------------------
+ * b5 文件列表
+ * -----------------------------
  */
 export async function encode(msg: RequestMessage): Promise<Uint8Array> {
   const binParam: Partial<BinParam> = {
@@ -75,8 +77,6 @@ export async function encode(msg: RequestMessage): Promise<Uint8Array> {
     headers: msg.headers,
     params: msg.params,
   };
-  // 解析b1
-  // const b1 = Uint8Array.of(msg.compress ? 1 : 0);
 
   // 解析b4
   const rawBody = msg.rawBody;
@@ -132,7 +132,7 @@ export async function encode(msg: RequestMessage): Promise<Uint8Array> {
   const paramBuf = await str2buf(JSON.stringify(binParam));
   const b3 = new Uint8Array(paramBuf);
 
-  // 解析b2，必须已大端字节序写入
+  // 解析b2，必须以大端字节序写入
   const b2view = new DataView(new ArrayBuffer(4));
   b2view.setUint32(0, b3.byteLength);
   const b2 = new Uint8Array(b2view.buffer);
