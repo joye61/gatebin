@@ -11,7 +11,6 @@ import (
 	"strconv"
 
 	"github.com/andybalholm/brotli"
-	"github.com/labstack/echo/v4"
 )
 
 func ConvertValueToStr(value Any) string {
@@ -90,13 +89,4 @@ func Contains(list []string, item string) bool {
 		}
 	}
 	return false
-}
-
-// 标准输出记录日志
-func LogError(c echo.Context, id int64, err error) {
-	c.Echo().Logger.Error(
-		"["+strconv.FormatInt(id, 10)+"] ",
-		err.Error(),
-		"\n",
-	)
 }

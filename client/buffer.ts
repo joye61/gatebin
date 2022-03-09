@@ -168,4 +168,53 @@ export async function encode(msg: RequestMessage): Promise<Uint8Array> {
   return binary;
 }
 
-// export async function decode(resp: Uint8Array): Promise<ResponseMessage> {}
+/**
+ * 响应消息编码
+ * -----------------------------
+ * b1 是否压缩 1字节
+ * -----------------------------
+ * b2 参数长度 4字节
+ * -----------------------------
+ * b3 参数区
+ *  code 响应code
+ *  headers 响应头
+ * -----------------------------
+ * b4 远端原始body
+ * -----------------------------
+ *
+ * @param resp
+ */
+export async function decode(resp: Uint8Array): Promise<ResponseMessage> {
+  // 先读取第一个字节
+  const b1 = resp.subarray(0, 1);
+  let offset = 1;
+
+  let dataPart: Uint8Array = resp.slice(1);
+  if (b1[0] === 1) {
+    dataPart = zlib.inflate(dataPart);
+  }
+
+  // 读取长度信息
+  offset = 0;
+  const lenView = new DataView(dataPart.buffer, offset, 4);
+  const paramLen = lenView.getUint32(0);
+  offset += 4;
+
+  // 读取参数
+  const paramData = dataPart.subarray(offset, offset + paramLen);
+  const paramStr = await buf2str(paramData);
+  const param = JSON.parse(paramStr) as {
+    code: number;
+    headers: Record<string, string[]>;
+  };
+  offset += paramLen;
+
+  // 读取消息体
+  const body = dataPart.slice(offset);
+
+  return {
+    code: param.code,
+    headers: param.headers,
+    body,
+  };
+}

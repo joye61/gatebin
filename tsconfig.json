@@ -1,7 +1,7 @@
 {
   "compilerOptions": {
     "target": "es2015",
-    "lib": ["DOM", "ESNext"],
+    "lib": ["ESNext", "DOM", "DOM.Iterable" ],
     "module": "ES2015",
     "rootDir": "./client",
     "moduleResolution": "node",

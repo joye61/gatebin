@@ -13,6 +13,7 @@ export default {
   preset: "ts-jest",
   rootDir: path.resolve(__dirname, "."),
   roots: ["<rootDir>/client", "<rootDir>/node_modules"],
+  setupFilesAfterEnv: ["./jest.setup.ts"],
   testEnvironment: "jsdom",
   testMatch: ["**/*.test.ts?(x)"],
   testPathIgnorePatterns: [

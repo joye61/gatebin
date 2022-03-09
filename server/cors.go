@@ -4,11 +4,11 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/labstack/echo/v4"
+	"github.com/gin-gonic/gin"
 )
 
-func SetCorsAllow(c echo.Context) {
-	req := c.Request()
+func SetCorsAllow(c *gin.Context) {
+	req := c.Request
 
 	// 最终的许可域从Origin头和Referer头中依次检测读取
 	origin := req.Header.Get("Origin")
@@ -27,11 +27,10 @@ func SetCorsAllow(c echo.Context) {
 
 	// 设置跨域头
 	setCorsHeader := func() {
-		header := c.Response().Header()
-		// header.Set("Access-Control-Allow-Headers", "Content-Type")
-		// header.Set("Access-Control-Allow-Credentials", "true")
-		header.Set("Access-Control-Allow-Origin", urlObj.Scheme+"://"+urlObj.Host)
-		header.Set("Access-Control-Allow-Methods", req.Method)
+		// c.Header("Access-Control-Allow-Headers", "Content-Type")
+		// c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Origin", urlObj.Scheme+"://"+urlObj.Host)
+		c.Header("Access-Control-Allow-Methods", req.Method)
 	}
 
 	if Mode == "dev" {

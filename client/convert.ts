@@ -1,34 +1,4 @@
-import { type FileItem } from "./post";
-
-/**
- * 字符串转ArrayBuffer
- * @param str
- * @returns
- */
-export async function str2buf(str: string): Promise<ArrayBuffer> {
-  const blob = new Blob([str]);
-  return blob.arrayBuffer();
-}
-
-/**
- * ArrayBuffer转字符串
- * @param buffer
- * @returns
- */
-export async function buf2str(buffer: BlobPart): Promise<string> {
-  const blob = new Blob([buffer]);
-  if (typeof blob.text === "function") {
-    return blob.text();
-  } else {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.addEventListener("load", () => {
-        resolve(reader.result as string);
-      });
-      reader.readAsText(blob);
-    });
-  }
-}
+import { FileItem } from "./types";
 
 export interface ParamsTypeData {
   params: Record<string, string>;
@@ -53,6 +23,7 @@ export async function toParamsFiles(
       files.push({
         key,
         name: value.name,
+        size: value.size,
         data: new Uint8Array(buf),
       });
     } else {
@@ -62,7 +33,7 @@ export async function toParamsFiles(
 
   // 如果是FormData类型
   if (input instanceof FormData) {
-    for (const [key, value] of input.entries()) {
+    for (const [key, value] of (input).entries()) {
       await fillValueFromKV(key, value);
     }
   }
@@ -77,7 +48,7 @@ export async function toParamsFiles(
   // 如果是Record<string, string | File>类型
   else {
     for (let key in input) {
-      const value = input[key];
+      const value = (<Record<string, string | File>>input)[key];
       await fillValueFromKV(key, value);
     }
   }

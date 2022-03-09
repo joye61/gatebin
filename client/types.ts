@@ -5,6 +5,8 @@ export interface RequestOption {
   method?: string;
   // 是否启用消息压缩，使用zlib压缩
   compress?: boolean;
+  // 是否开启调试，默认不开启
+  debug?: boolean;
 }
 
 export interface FileItem {
@@ -18,7 +20,7 @@ export interface RawBody {
   // 是否开启原始类型传输
   enabled: boolean;
   // 原始body的长度
-  size: number;
+  size?: number;
   // 0: 纯文本， 1：二进制
   type?: 0 | 1;
   bodyAsText?: string;
@@ -43,14 +45,9 @@ export interface BinParam {
   rawBody: Omit<RawBody, "bodyAsText" | "bodyAsBinary">;
   files: Array<Omit<FileItem, "data">>;
 }
-
-export interface HeaderValue {
-  value: string[];
-}
-
 export interface ResponseMessage {
   code: number;
-  headers: Record<string, HeaderValue>;
+  headers: Record<string, string[]>;
   body: Uint8Array;
 }
 

@@ -12,7 +12,7 @@
         "env": {
           "GOOS": "windows"
         },
-        "cwd": "${workspaceFolder}/gateway"
+        "cwd": "${workspaceFolder}/server"
       }
     },
     {
@@ -24,7 +24,7 @@
         "env": {
           "GOOS": "darwin"
         },
-        "cwd": "${workspaceFolder}/gateway"
+        "cwd": "${workspaceFolder}/server"
       }
     },
     {
@@ -36,7 +36,7 @@
         "env": {
           "GOOS": "linux"
         },
-        "cwd": "${workspaceFolder}/gateway"
+        "cwd": "${workspaceFolder}/server"
       }
     },
     {

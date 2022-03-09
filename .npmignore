@@ -1,9 +1,12 @@
 /.vscode/
 /bin/
 /node_modules/
+/coverage/
+/client/
+/server/
 /.gitignore
 /.npmignore
-/jsconfig.json
-/message.proto
 /package-lock.json
 /tsconfig.json
+/jest.config.ts
+/jest.setup.ts
