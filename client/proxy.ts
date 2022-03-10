@@ -119,6 +119,11 @@ export async function createRequestMessage(
     files: [],
   };
 
+  // 下列方法没有请求体，直接返回
+  if (["GET", "CONNECT", "HEAD", "OPTIONS", "TRACE"].includes(option.method!)) {
+    return message;
+  }
+
   // 获取rawBody的引用
   const rawBody = message.rawBody;
 
@@ -289,7 +294,6 @@ export async function request(
 
   // 获取配置
   const defaultOption: RequestOption = {
-    method: "GET",
     compress: true,
     debug: false,
   };
@@ -298,6 +302,7 @@ export async function request(
   } else {
     option = defaultOption;
   }
+  option.method = option.method?.toUpperCase() ?? "GET";
 
   // 创建消息
   const payload = await createRequestMessage(url, option);

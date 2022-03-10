@@ -8,6 +8,11 @@ import (
 )
 
 func StartServer() {
+	mode := gin.DebugMode
+	if Mode == "prod" {
+		mode = gin.ReleaseMode
+	}
+	gin.SetMode(mode)
 	r := gin.Default()
 	r.POST(GatewayEntry, func(c *gin.Context) {
 		SetCorsAllow(c)

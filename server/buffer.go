@@ -79,8 +79,8 @@ func Decode(body io.Reader) (*RequestMessage, error) {
 }
 
 type ResponseParam struct {
-	Code    int
-	Headers http.Header
+	Code    int         `json:"code"`
+	Headers http.Header `json:"headers"`
 }
 
 type ResponseMessage struct {

@@ -210,10 +210,15 @@ export async function decode(resp: Uint8Array): Promise<ResponseMessage> {
 
   // 读取消息体
   const body = dataPart.slice(offset);
+  // 最终请求体
+  const headers: Record<string, string[]> = {};
+  for (let key in param.headers) {
+    headers[key.toLowerCase()] = param.headers[key];
+  }
 
   return {
     code: param.code,
-    headers: param.headers,
+    headers: headers,
     body,
   };
 }

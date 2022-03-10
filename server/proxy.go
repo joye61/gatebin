@@ -38,42 +38,46 @@ func ProxyRequest(c *gin.Context) {
 
 	// 获取请求体
 	var body []byte
-	if msg.RawBody.Enabled {
-		body = msg.RawBody.Data
-	} else {
-		ctype := headers.Get("Content-Type")
-		mtype, _, err := mime.ParseMediaType(ctype)
-		if err != nil {
-			c.Status(http.StatusInternalServerError)
-			return
-		}
 
-		switch mtype {
-		case "application/x-www-form-urlencoded":
-			values := url.Values{}
-			for key, value := range msg.Params {
-				result := ConvertValueToStr(value)
-				values.Add(key, result)
-			}
-			body = []byte(values.Encode())
-		case "multipart/form-data":
-			w := &bytes.Buffer{}
-			multi := multipart.NewWriter(w)
-			// 填充数据字段
-			for key, value := range msg.Params {
-				result := ConvertValueToStr(value)
-				multi.WriteField(key, result)
-			}
-			// 填充文件
-			for _, item := range msg.Files {
-				fw, err := multi.CreateFormFile(item.Key, item.Name)
-				if err == nil {
-					fw.Write(item.Data)
+	// 只有POST类请求有请求体
+	if !Contains(
+		[]string{"GET", "CONNECT", "HEAD", "OPTIONS", "TRACE"},
+		strings.ToUpper(msg.Method),
+	) {
+
+		if msg.RawBody.Enabled {
+			body = msg.RawBody.Data
+		} else {
+			ctype := headers.Get("Content-Type")
+			mtype, _, _ := mime.ParseMediaType(ctype)
+
+			switch mtype {
+			case "application/x-www-form-urlencoded":
+				values := url.Values{}
+				for key, value := range msg.Params {
+					result := ConvertValueToStr(value)
+					values.Add(key, result)
 				}
+				body = []byte(values.Encode())
+			case "multipart/form-data":
+				w := &bytes.Buffer{}
+				multi := multipart.NewWriter(w)
+				// 填充数据字段
+				for key, value := range msg.Params {
+					result := ConvertValueToStr(value)
+					multi.WriteField(key, result)
+				}
+				// 填充文件
+				for _, item := range msg.Files {
+					fw, err := multi.CreateFormFile(item.Key, item.Name)
+					if err == nil {
+						fw.Write(item.Data)
+					}
+				}
+				multi.Close()
+				headers.Set("Content-Type", multi.FormDataContentType())
+				body = w.Bytes()
 			}
-			multi.Close()
-			headers.Set("Content-Type", multi.FormDataContentType())
-			body = w.Bytes()
 		}
 	}
 
@@ -141,7 +145,7 @@ func ProxyRequest(c *gin.Context) {
 	}
 
 	c.Header("Content-Length", strconv.FormatInt(int64(len(respMsg)), 10))
-	c.Header("Server", Server)
+	c.Header("X-Powered-By", Server)
 
 	c.Data(http.StatusOK, "application/octet-stream", respMsg)
 }
