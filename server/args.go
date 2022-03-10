@@ -8,6 +8,9 @@ import (
 // 服务器名
 var Server = "GateBin"
 
+// SessionID名字
+var SessionIDName = "GBSESSIONID"
+
 // dev | prod
 var Mode = "dev"
 
