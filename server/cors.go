@@ -28,30 +28,25 @@ func SetCorsAllow(c *gin.Context) {
 	// 设置跨域头
 	setCorsHeader := func() {
 		// c.Header("Access-Control-Allow-Headers", "Content-Type")
-		// c.Header("Access-Control-Allow-Credentials", "true")
+		c.Header("Access-Control-Allow-Credentials", "true")
 		c.Header("Access-Control-Allow-Origin", urlObj.Scheme+"://"+urlObj.Host)
 		c.Header("Access-Control-Allow-Methods", req.Method)
 	}
 
-	if Mode == "dev" {
-		// 开发环境始终允许所有
+	// 从允许的域名列表中选取
+	hostname := urlObj.Hostname()
+	parts := strings.Split(hostname, ".")
+	lenParts := len(parts)
+	allow := false
+	tmpHost := parts[len(parts)-1]
+	for i := lenParts - 2; i >= 0; i-- {
+		tmpHost = parts[i] + "." + tmpHost
+		if Contains(AllowHosts, tmpHost) {
+			allow = true
+			break
+		}
+	}
+	if allow {
 		setCorsHeader()
-	} else if Mode == "prod" {
-		// 正式环境从允许的域名列表中选取
-		hostname := urlObj.Hostname()
-		parts := strings.Split(hostname, ".")
-		lenParts := len(parts)
-		allow := false
-		tmpHost := parts[len(parts)-1]
-		for i := lenParts - 2; i >= 0; i-- {
-			tmpHost = parts[i] + "." + tmpHost
-			if Contains(AllowHosts, tmpHost) {
-				allow = true
-				break
-			}
-		}
-		if allow {
-			setCorsHeader()
-		}
 	}
 }

@@ -5,6 +5,9 @@ import (
 	"strings"
 )
 
+// 服务器名
+var Server = "GateBin"
+
 // dev | prod
 var Mode = "dev"
 

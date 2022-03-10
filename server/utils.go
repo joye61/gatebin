@@ -7,7 +7,6 @@ import (
 	"compress/zlib"
 	"errors"
 	"io"
-	"io/ioutil"
 	"strconv"
 
 	"github.com/andybalholm/brotli"
@@ -37,26 +36,26 @@ func DeCompress(body io.Reader, method string) ([]byte, error) {
 			return nil, err
 		}
 		defer gz.Close()
-		return ioutil.ReadAll(gz)
+		return io.ReadAll(gz)
 	case "compress": /// LZW
 		// TODO
 		return nil, errors.New("LZW format decompression is not supported at this time")
 	case "deflate": /// DEFLATE
 		def := flate.NewReader(body)
 		defer def.Close()
-		return ioutil.ReadAll(def)
+		return io.ReadAll(def)
 	case "br": /// Brotli
-		return ioutil.ReadAll(brotli.NewReader(body))
+		return io.ReadAll(brotli.NewReader(body))
 	case "zlib": /// zlib
 		zlib, err := zlib.NewReader(body)
 		if err != nil {
 			return nil, err
 		}
 		defer zlib.Close()
-		return ioutil.ReadAll(zlib)
+		return io.ReadAll(zlib)
 	default:
 		// 表示没有压缩
-		return ioutil.ReadAll(body)
+		return io.ReadAll(body)
 	}
 }
 

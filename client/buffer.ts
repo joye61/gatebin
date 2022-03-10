@@ -103,7 +103,6 @@ export async function encode(msg: RequestMessage): Promise<Uint8Array> {
     b4 = new Uint8Array(0);
     binParam.rawBody = {
       enabled: false,
-      size: 0,
     };
   }
 
