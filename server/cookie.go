@@ -11,13 +11,26 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DomainCookies map[string]([]*http.Cookie)
+type GBCookie struct {
+	*http.Cookie
+	CreateTime time.Time
+}
+
+// cookie列表结构
+//  {
+//     "a.com" : {
+//				"name1": *GBCookie,
+//				"name2": *GBCookie
+//  		},
+//     "b.com" : {
+//				"name1": *GBCookie,
+//				"name2": *GBCookie
+//  		},
+//			...
+//  }
+type DomainCookies map[string](map[string]*GBCookie)
 
 type SingleUserCookies struct {
-	// 创建时间
-	CreateTime time.Time
-	// 过期时间
-	Duration time.Duration
 	// 上次访问时间
 	LastVisitTime time.Time
 	// 对应的列表
@@ -34,8 +47,8 @@ type CookieStore map[string]*SingleUserCookies
 // 定义cookie的存储
 var StoreCache = CookieStore{}
 
-// Cookie的验证逻辑
-func CookieCheck(msg *RequestMessage, c *gin.Context, resp *http.Response) {
+// 验证用户的cookie，更新和存储
+func CheckUserCookie(msg *RequestMessage, c *gin.Context, resp *http.Response) {
 
 	// 最终请求的URL解析
 	urlInstance, err := url.Parse(msg.Url)
@@ -48,19 +61,20 @@ func CookieCheck(msg *RequestMessage, c *gin.Context, resp *http.Response) {
 	sid, err := c.Cookie(SessionIDName)
 
 	if err == nil {
-		// 收到sessionID
-		// 查看缓存中是否有对应的键
+		// err 为空代表用户传了sessionid
 		userItem, ok := StoreCache[sid]
-		// 只有用户传的sid在缓存中有记录才处理读取逻辑
 		if ok {
-
-			return
+			// 用户传了sessionid，且缓存中能找到新值，更新记录
+			UpdateUserCookies(allowHost, userItem, resp.Cookies())
+			StoreCache[sid] = userItem
+		} else {
+			// 用户传了sessionid，但是缓存中找不到存储，创建记录
+			CreateNewCookieStore(allowHost, c, resp)
 		}
+	} else {
+		// 用户没有传sessionid，创建记录
+		CreateNewCookieStore(allowHost, c, resp)
 	}
-
-	// 其余所有情况创建新的cookie存储
-	CreateNewCookieStore(allowHost, c, resp)
-
 }
 
 // 检测某个domain是否可以写入
@@ -76,9 +90,6 @@ func GetDomainCheckList(allowHost string) []string {
 	return checkList
 }
 
-// 更新用户的COOKIE存储空间，包含过期等逻辑
-func UpdateCookieStore(allowHost string, c *gin.Context, resp *http.Response) {}
-
 // 为用户创建新的COOKIE存储空间
 func CreateNewCookieStore(allowHost string, c *gin.Context, resp *http.Response) {
 	// 如果响应中没有任何cookie，不做任何处理
@@ -88,24 +99,13 @@ func CreateNewCookieStore(allowHost string, c *gin.Context, resp *http.Response)
 	// 如果响应中有cookie，需要生成新的sessionid并响应给客户端
 	now := time.Now()
 	userItem := &SingleUserCookies{
-		CreateTime:    now,
-		Duration:      30 * 24 * time.Hour,
 		LastVisitTime: now,
 		List:          DomainCookies{},
 		l:             &sync.RWMutex{},
 	}
 
-	// 获取即将要检查的域名列表
-	checkList := GetDomainCheckList(allowHost)
-
-	// 检查服务端返回的所有COOKIE合法性，只能写入自身域下的cookie
-	for _, cookie := range resp.Cookies() {
-		domain := strings.TrimLeft(cookie.Domain, ".")
-		if Contains(checkList, domain) {
-			clist := []*http.Cookie{}
-			userItem.List[domain] = append(clist, cookie)
-		}
-	}
+	// 更新userItem
+	UpdateUserCookies(allowHost, userItem, resp.Cookies())
 
 	// 创建sessionid
 	sid := SidCreator.NewString()
@@ -113,6 +113,7 @@ func CreateNewCookieStore(allowHost string, c *gin.Context, resp *http.Response)
 	c.SetCookie(
 		SessionIDName,
 		sid,
+		// SESSIONID的过期时间为30天
 		30*24*60*60,
 		"/",
 		"",
@@ -124,4 +125,137 @@ func CreateNewCookieStore(allowHost string, c *gin.Context, resp *http.Response)
 	csl.Lock()
 	StoreCache[sid] = userItem
 	csl.Unlock()
+}
+
+// 根据远端返回的cookie更新当前的列表
+func UpdateUserCookies(
+	allowHost string,
+	userCookies *SingleUserCookies,
+	newList []*http.Cookie,
+) {
+	// 如果没有新的cookie需要写入，直接返回
+	if len(newList) == 0 {
+		return
+	}
+
+	// 写锁定
+	userCookies.l.Lock()
+	defer userCookies.l.Unlock()
+
+	var list = userCookies.List
+	if list == nil {
+		list = DomainCookies{}
+	}
+	// 首先判断旧列表的过期逻辑，过期的全部清理
+	now := time.Now()
+
+	// 获取即将要检查的域名列表
+	checkList := GetDomainCheckList(allowHost)
+
+	// 将新列表覆盖到原列表，同名的全部覆盖处理
+	for _, value := range newList {
+		// 没有名字的cookie不做任何处理
+		name := value.Name
+		if name == "" {
+			continue
+		}
+
+		domain := strings.TrimLeft(value.Domain, ".")
+		// 不合法的域，不允许写入
+		if !Contains(checkList, domain) {
+			continue
+		}
+
+		// 当前域下的cookie过期清理逻辑，只要访问就会触发
+		newTmpList := map[string]*GBCookie{}
+		for tname, tvalue := range list[domain] {
+			duration := tvalue.MaxAge * int(time.Second)
+			if now.Before(tvalue.CreateTime.Add(time.Duration(duration))) {
+				newTmpList[tname] = tvalue
+			}
+		}
+
+		// 接下来判断时间逻辑，确保最终存储的MaxAge有值
+		if value.MaxAge < 0 {
+			// 立即删除
+			delete(newTmpList, name)
+		} else if value.MaxAge == 0 {
+			// 没有MaxAge字段，判断Expire
+			sub := time.Until(value.Expires)
+			if sub < 0 {
+				delete(newTmpList, name)
+			} else if sub == 0 {
+				// 如果是session cookie 默认1小时过期
+				value.MaxAge = 1 * 60 * int(time.Second)
+				// 写入Cookie
+				newTmpList[name] = &GBCookie{
+					value,
+					now,
+				}
+			} else {
+				// 如果maxage不存在，但是expires大于0，则重新生成maxAge
+				value.MaxAge = int(sub.Seconds())
+				newTmpList[name] = &GBCookie{
+					value,
+					now,
+				}
+			}
+		} else {
+			// MaxAge>0的情况
+			newTmpList[name] = &GBCookie{
+				value,
+				now,
+			}
+		}
+
+		// 更新该域下对应的COOKIE列表
+		list[domain] = newTmpList
+	}
+
+	// 更新用户的COOKIE列表
+	userCookies.LastVisitTime = now
+	userCookies.List = list
+}
+
+// 检测用户存储区的COOKIE过期逻辑
+func CheckUserCookieExpire() {
+	now := time.Now()
+	for sid, userCookies := range StoreCache {
+		userCookies.l.Lock()
+		// 如果距离上次访问时间查过30天，则清理当前sid下的所有数据
+		dur := time.Since(userCookies.LastVisitTime)
+		if dur > 30*24*time.Hour {
+			continue
+		}
+
+		// 首先判断旧列表的过期逻辑，过期的全部清理
+		for domain, oldList := range userCookies.List {
+			tmpList := map[string]*GBCookie{}
+			for name, gbcookie := range oldList {
+				duration := gbcookie.MaxAge * int(time.Second)
+				if now.Before(gbcookie.CreateTime.Add(time.Duration(duration))) {
+					tmpList[name] = gbcookie
+				}
+			}
+			if len(tmpList) > 0 {
+				userCookies.List[domain] = tmpList
+			} else {
+				delete(userCookies.List, domain)
+			}
+		}
+
+		// 只有当cookie列表有数据时才更新
+		if len(userCookies.List) > 0 {
+			StoreCache[sid] = userCookies
+		}
+		userCookies.l.Unlock()
+	}
+}
+
+func CookieExpireManager() {
+	t := time.NewTicker(5 * time.Second)
+	for {
+		<-t.C
+		go CheckUserCookieExpire()
+	}
 }
