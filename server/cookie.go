@@ -2,7 +2,6 @@ package main
 
 import (
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -47,15 +46,48 @@ type CookieStore map[string]*SingleUserCookies
 // 定义cookie的存储
 var StoreCache = CookieStore{}
 
-// 验证用户的cookie，更新和存储
-func CheckUserCookie(msg *RequestMessage, c *gin.Context, resp *http.Response) {
+// 过滤一个列表中过期的cookie
+func GetValidDomainCookies(now time.Time, oldList map[string]*GBCookie) map[string]*GBCookie {
+	newList := map[string]*GBCookie{}
+	for name, value := range oldList {
+		duration := value.MaxAge * int(time.Second)
+		if now.Before(value.CreateTime.Add(time.Duration(duration))) {
+			newList[name] = value
+		}
+	}
+	return newList
+}
 
-	// 最终请求的URL解析
-	urlInstance, err := url.Parse(msg.Url)
-	if err != nil {
+// 发送当前请求对应的COOKIE
+func SendUserCookie(allowHost string, c *gin.Context, req *http.Request) {
+	domainList := GetDomainCheckList(allowHost)
+	sid, err := c.Cookie(SessionIDName)
+	if err == nil {
+		userItem, ok := StoreCache[sid]
+		if ok {
+			for _, domain := range domainList {
+				clist := GetValidDomainCookies(time.Now(), userItem.List[domain])
+				for _, cookie := range clist {
+					req.AddCookie(&http.Cookie{
+						Name:  cookie.Name,
+						Value: cookie.Value,
+					})
+				}
+				// 更新当前域下的COOKIE列表
+				userItem.l.Lock()
+				userItem.List[domain] = clist
+				userItem.l.Unlock()
+			}
+		}
+	}
+}
+
+// 保存远端服务器下发的COOKIE
+func SaveUserCookie(allowHost string, c *gin.Context, resp *http.Response) {
+	// 如果响应中没有任何cookie，不做任何处理
+	if len(resp.Cookies()) == 0 {
 		return
 	}
-	allowHost := urlInstance.Hostname()
 
 	// 读取用户传入的sid
 	sid, err := c.Cookie(SessionIDName)
@@ -92,10 +124,6 @@ func GetDomainCheckList(allowHost string) []string {
 
 // 为用户创建新的COOKIE存储空间
 func CreateNewCookieStore(allowHost string, c *gin.Context, resp *http.Response) {
-	// 如果响应中没有任何cookie，不做任何处理
-	if len(resp.Cookies()) == 0 {
-		return
-	}
 	// 如果响应中有cookie，需要生成新的sessionid并响应给客户端
 	now := time.Now()
 	userItem := &SingleUserCookies{
@@ -133,11 +161,6 @@ func UpdateUserCookies(
 	userCookies *SingleUserCookies,
 	newList []*http.Cookie,
 ) {
-	// 如果没有新的cookie需要写入，直接返回
-	if len(newList) == 0 {
-		return
-	}
-
 	// 写锁定
 	userCookies.l.Lock()
 	defer userCookies.l.Unlock()
@@ -167,13 +190,7 @@ func UpdateUserCookies(
 		}
 
 		// 当前域下的cookie过期清理逻辑，只要访问就会触发
-		newTmpList := map[string]*GBCookie{}
-		for tname, tvalue := range list[domain] {
-			duration := tvalue.MaxAge * int(time.Second)
-			if now.Before(tvalue.CreateTime.Add(time.Duration(duration))) {
-				newTmpList[tname] = tvalue
-			}
-		}
+		newTmpList := GetValidDomainCookies(now, list[domain])
 
 		// 接下来判断时间逻辑，确保最终存储的MaxAge有值
 		if value.MaxAge < 0 {
@@ -209,7 +226,9 @@ func UpdateUserCookies(
 		}
 
 		// 更新该域下对应的COOKIE列表
-		list[domain] = newTmpList
+		if len(newTmpList) > 0 {
+			list[domain] = newTmpList
+		}
 	}
 
 	// 更新用户的COOKIE列表
@@ -252,8 +271,9 @@ func CheckUserCookieExpire() {
 	}
 }
 
+// 定时的清理cookie
 func CookieExpireManager() {
-	t := time.NewTicker(5 * time.Second)
+	t := time.NewTicker(5 * 24 * time.Hour)
 	for {
 		<-t.C
 		go CheckUserCookieExpire()

@@ -23,6 +23,14 @@ func ProxyRequest(c *gin.Context) {
 		return
 	}
 
+	// 解析cookie存储相关的许可HOST
+	urlInstance, err := url.Parse(msg.Url)
+	if err != nil {
+		InternalServerError(c, msg.Compress, err)
+		return
+	}
+	allowHost := urlInstance.Hostname()
+
 	// 重新拼装请求头
 	headers := c.Request.Header.Clone()
 	for key, value := range msg.Headers {
@@ -31,10 +39,13 @@ func ProxyRequest(c *gin.Context) {
 	// 设置请求的最终目标Host
 	urlObj, err := url.Parse(msg.Url)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		InternalServerError(c, msg.Compress, err)
 		return
 	}
+	// 添加Host头
 	headers.Set("Host", urlObj.Host)
+	// 删除原来的COOKIE头
+	headers.Del("Cookie")
 
 	// 获取请求体
 	var body []byte
@@ -93,11 +104,13 @@ func ProxyRequest(c *gin.Context) {
 		bytes.NewBuffer(body),
 	)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		InternalServerError(c, msg.Compress, err)
 		return
 	}
 	// 更新请求头
 	req.Header = headers
+	// 发送用户的COOKIE
+	SendUserCookie(allowHost, c, req)
 	// 发送请求
 	client := &http.Client{}
 	// 开发环境跳过https证书验证
@@ -110,9 +123,12 @@ func ProxyRequest(c *gin.Context) {
 	}
 	resp, err := client.Do(req)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		InternalServerError(c, msg.Compress, err)
 		return
 	}
+
+	// 保存第三方下发的COOKIE
+	SaveUserCookie(allowHost, c, resp)
 
 	// 设置头部
 	respHeaders := resp.Header.Clone()
@@ -124,7 +140,7 @@ func ProxyRequest(c *gin.Context) {
 	ctype := resp.Header.Get("Content-Encoding")
 	respBody, err := DeCompress(resp.Body, ctype)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		InternalServerError(c, msg.Compress, err)
 		return
 	}
 
@@ -140,7 +156,7 @@ func ProxyRequest(c *gin.Context) {
 
 	respMsg, err := Encode(responseMessage)
 	if err != nil {
-		c.Status(http.StatusInternalServerError)
+		InternalServerError(c, msg.Compress, err)
 		return
 	}
 

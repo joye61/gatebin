@@ -4,8 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type RawBodyData struct {
@@ -87,6 +90,27 @@ type ResponseMessage struct {
 	Compress bool
 	Params   *ResponseParam
 	Body     []byte
+}
+
+// 发送错误的页面
+func InternalServerError(c *gin.Context, compress bool, err error) {
+	fmt.Println(err.Error())
+	headers := http.Header{}
+	headers.Add("Content-Type", gin.MIMEHTML)
+	msg := &ResponseMessage{
+		Compress: compress,
+		Params: &ResponseParam{
+			Code:    http.StatusInternalServerError,
+			Headers: headers,
+		},
+		Body: []byte(http.StatusText(http.StatusInternalServerError)),
+	}
+	body, encodeErr := Encode(msg)
+	if encodeErr != nil {
+		c.Status(http.StatusInternalServerError)
+		return
+	}
+	c.Data(http.StatusOK, "application/octet-stream", body)
 }
 
 // 编码响应客户端的数据
